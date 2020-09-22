@@ -8,14 +8,14 @@
 package irc;
 
 import java.awt.*;
-import java.awt.event.*; 
+import java.awt.event.*;
 
 
 import jvn.*;
 import java.io.*;
 
 
-public class Irc {
+public class Irc implements Serializable{
 	public TextArea		text;
 	public TextField	data;
 	Frame 			frame;
@@ -141,6 +141,3 @@ public class Irc {
 	 }
 	}
 }
-
-
-
