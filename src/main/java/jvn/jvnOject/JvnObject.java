@@ -5,7 +5,9 @@
  * Authors: 
  */
 
-package jvn;
+package jvn.jvnOject;
+
+import jvn.JvnException;
 
 import java.io.*;
 

@@ -9,13 +9,15 @@
 
 package jvn;
 
+import jvn.jvnOject.JvnObject;
+import jvn.jvnOject.JvnObjectImpl;
+
 import java.rmi.server.UnicastRemoteObject;
 import java.io.*;
+import java.util.HashMap;
 
 
-public class JvnServerImpl
-        extends UnicastRemoteObject
-        implements JvnLocalServer, JvnRemoteServer {
+public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer, JvnRemoteServer {
 
     /**
      *
@@ -24,6 +26,8 @@ public class JvnServerImpl
     // A JVN server is managed as a singleton
     private static JvnServerImpl js = null;
 
+    private HashMap<Integer, JvnObject> interceptorList;
+
     /**
      * Default constructor
      *
@@ -31,6 +35,7 @@ public class JvnServerImpl
      **/
     private JvnServerImpl() throws Exception {
         super();
+        this.interceptorList = new HashMap<>();
         // to be completed
     }
 
@@ -67,10 +72,12 @@ public class JvnServerImpl
      * @param o : the JVN object state
      * @throws JvnException
      **/
-    public JvnObject jvnCreateObject(Serializable o)
-            throws jvn.JvnException {
-        // to be completed
-        return null;
+    public JvnObject jvnCreateObject(Serializable o) throws jvn.JvnException {
+        int id  = 0; //TODO RMI CALL REQUEST TO COORDINATOR FOR GET NEW ID
+
+        JvnObject jvnObject = new JvnObjectImpl(o,id,this);
+        this.interceptorList.put(jvnObject.jvnGetObjectId(), jvnObject);
+        return jvnObject;
     }
 
     /**
@@ -121,6 +128,7 @@ public class JvnServerImpl
      **/
     public Serializable jvnLockWrite(int joi)
             throws JvnException {
+
         // to be completed
         return null;
     }

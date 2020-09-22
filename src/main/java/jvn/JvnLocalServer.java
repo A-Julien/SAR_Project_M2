@@ -10,6 +10,8 @@
 
 package jvn;
 
+import jvn.jvnOject.JvnObject;
+
 import java.io.Serializable;
 
 /**

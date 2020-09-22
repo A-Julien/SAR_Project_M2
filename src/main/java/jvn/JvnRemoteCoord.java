@@ -9,6 +9,8 @@
 
 package jvn;
 
+import jvn.jvnOject.JvnObject;
+
 import java.rmi.*;
 import java.io.*;
 

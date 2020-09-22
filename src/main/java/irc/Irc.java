@@ -12,6 +12,8 @@ import java.awt.event.*;
 
 
 import jvn.*;
+import jvn.jvnOject.JvnObject;
+
 import java.io.*;
 
 
@@ -19,7 +21,7 @@ public class Irc implements Serializable{
 	public TextArea		text;
 	public TextField	data;
 	Frame 			frame;
-	JvnObject       sentence;
+	JvnObject sentence;
 
 
   /**

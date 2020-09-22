@@ -9,18 +9,14 @@
 
 package jvn;
 
+import jvn.jvnOject.JvnObject;
+
 import java.rmi.server.UnicastRemoteObject;
 import java.io.Serializable;
 
 
-public class JvnCoordImpl
-        extends UnicastRemoteObject
-        implements JvnRemoteCoord {
+public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord {
 
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     /**
