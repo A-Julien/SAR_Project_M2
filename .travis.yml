@@ -31,7 +31,7 @@ deploy:
   - provider: pages
     skip_cleanup: true
     local_dir: target/site
-    github_token: "$GH_TOKEN"
+    github_token: "$SAR_GH_TOKEN"
     keep_history: true
     on:
       tags: false
