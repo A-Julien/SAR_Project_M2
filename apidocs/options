@@ -1,0 +1,24 @@
+-classpath
+'/home/travis/.m2/repository/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar:/home/travis/.m2/repository/junit/junit/4.10/junit-4.10.jar:/home/travis/.m2/repository/org/hamcrest/hamcrest-core/1.1/hamcrest-core-1.1.jar'
+-encoding
+'UTF-8'
+-public
+-sourcepath
+'/home/travis/build/A-Julien/SAR_Project_M2/src/main/java:/home/travis/build/A-Julien/SAR_Project_M2/target/generated-sources/annotations'
+-author
+-bottom
+'Copyright &#169; 2020. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/home/travis/build/A-Julien/SAR_Project_M2/target/site/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'SAR_Project_M2 1.0-SNAPSHOT API'
+-linkoffline
+'https://docs.oracle.com/javase/8/docs/api' '/home/travis/build/A-Julien/SAR_Project_M2/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'SAR_Project_M2 1.0-SNAPSHOT API'
