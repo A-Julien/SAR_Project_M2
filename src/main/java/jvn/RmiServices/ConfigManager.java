@@ -1,4 +1,4 @@
-package jvn.ConfigManagerServices;
+package jvn.RmiServices;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;

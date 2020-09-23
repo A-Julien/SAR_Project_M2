@@ -45,6 +45,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
+                    <javadocExecutable>/usr/libexec/java_home/../bin/javadoc</javadocExecutable>
                     <show>private</show>
                     <nohelp>true</nohelp>
                 </configuration>

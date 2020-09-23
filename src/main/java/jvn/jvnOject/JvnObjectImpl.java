@@ -1,7 +1,7 @@
 package jvn.jvnOject;
 
 import jvn.JvnException;
-import jvn.JvnLocalServer;
+import jvn.Server.JvnLocalServer;
 
 import java.io.Serializable;
 

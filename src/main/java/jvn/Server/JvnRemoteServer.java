@@ -8,7 +8,9 @@
  * Authors: 
  */
 
-package jvn;
+package jvn.Server;
+
+import jvn.JvnException;
 
 import java.rmi.*;
 import java.io.*;

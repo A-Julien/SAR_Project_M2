@@ -8,11 +8,13 @@
  * Authors: 
  */
 
-package jvn;
+package jvn.Server;
 
+import jvn.JvnException;
 import jvn.jvnOject.JvnObject;
 
 import java.io.Serializable;
+import java.rmi.RemoteException;
 
 /**
  * Local interface of a JVN server  (used by the applications).
@@ -30,7 +32,7 @@ public interface JvnLocalServer {
      * @throws JvnException
      **/
     public JvnObject jvnCreateObject(Serializable jos)
-            throws jvn.JvnException;
+            throws jvn.JvnException, RemoteException;
 
     /**
      * Associate a symbolic name with a JVN object
@@ -40,7 +42,7 @@ public interface JvnLocalServer {
      * @throws JvnException
      **/
     public void jvnRegisterObject(String jon, JvnObject jo)
-            throws jvn.JvnException;
+            throws jvn.JvnException, RemoteException;
 
     /**
      * Get the reference of a JVN object associated to a symbolic name

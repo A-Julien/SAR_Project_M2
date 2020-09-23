@@ -1,0 +1,4 @@
+{
+  "securityManagerProp":"src/App/security.policy",
+  "bdProp":"Not_Wet"
+}

@@ -1,0 +1,38 @@
+language: java
+sudo: required
+os: linux
+dist: trusty
+
+branches:
+  only:
+    - master
+    - "/^\\d+\\.\\d+\\.\\d+$/"
+env:
+  global:
+    - PROJECT_VERSION="default"
+
+jdk:
+  - oraclejdk8
+
+#services:
+#  - docker
+
+script:
+  - mvn compile
+
+after_success:
+  - mvn site
+  - mvn package -q
+  - PROJECT_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+  - ls target/site
+
+
+deploy:
+  - provider: pages
+    skip_cleanup: true
+    local_dir: target/site
+    github_token: "$GH_TOKEN"
+    keep_history: true
+    on:
+      tags: false
+      branch: master

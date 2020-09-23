@@ -7,12 +7,15 @@
  * Authors: 
  */
 
-package jvn;
+package jvn.Server;
 
-import jvn.ConfigManagerServices.ConfigManager;
+import jvn.JvnCoord.JvnRemoteCoord;
+import jvn.JvnException;
+import jvn.RmiServices.ConfigManager;
 import jvn.jvnOject.JvnObject;
 import jvn.jvnOject.JvnObjectImpl;
 
+import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -50,18 +53,22 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
 
         try {
             this.RmiConnect();
-            this.registry.rebind(ConfigManager.buildRmiAddr("NOMSERV", this.adresse), this);
         } catch (RemoteException e) {
             System.out.println("Server Failed to start");
             System.exit(1);
         }
     }
 
-    private void RmiConnect() throws RemoteException {
+    private void RmiConnect() throws RemoteException, NotBoundException {
         LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
         this.registry = LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
         System.setProperty("java.security.policy", ConfigManager.getConfig("securityManagerProp"));
         if (System.getSecurityManager() == null) System.setSecurityManager(new RMISecurityManager());
+
+        this.registry.rebind(ConfigManager.buildRmiAddr("NOMSERV", this.adresse), this);
+
+        this.jvnCoord = (JvnRemoteCoord) this.registry.lookup(ConfigManager.buildRmiAddr("Coord", this.adresse));
+        if(this.jvnCoord == null) throw new NotBoundException("null not excepted");
     }
 
     /**
@@ -70,10 +77,10 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      *
      * @throws JvnException
      **/
-    public static JvnServerImpl jvnGetServer() {
+    public static JvnServerImpl jvnGetServer(String address) {
         if (js == null) {
             try {
-                js = new JvnServerImpl();
+                js = new JvnServerImpl(address);
             } catch (Exception e) {
                 return null;
             }
@@ -97,8 +104,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @param o : the JVN object state
      * @throws JvnException
      **/
-    public JvnObject jvnCreateObject(Serializable o) throws jvn.JvnException {
-        int id  = 0; //TODO RMI CALL REQUEST TO COORDINATOR FOR GET NEW ID
+    public JvnObject jvnCreateObject(Serializable o) throws jvn.JvnException, RemoteException {
+        int id  = this.jvnCoord.jvnGetObjectId();
         JvnObject jvnObject = new JvnObjectImpl(o,id,this);
         return jvnObject;
     }
@@ -110,7 +117,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @param jo  : the JVN object
      * @throws JvnException
      **/
-    public void jvnRegisterObject(String jon, JvnObject jo) throws jvn.JvnException {
+    public void jvnRegisterObject(String jon, JvnObject jo) throws jvn.JvnException, RemoteException {
+        this.jvnCoord.jvnRegisterObject(jon,jo,jo.jvnGetObjectId(),this);
         this.interceptorList.put(jon, jo);
     }
 
@@ -121,8 +129,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the JVN object
      * @throws JvnException
      **/
-    public JvnObject jvnLookupObject(String jon)
-            throws jvn.JvnException {
+    public JvnObject jvnLookupObject(String jon) throws jvn.JvnException {
         // to be completed
         return null;
     }
