@@ -29,28 +29,30 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
     private static final long serialVersionUID = 1L;
     private static int interceptorUid = 0;
+
+    /** RMI parameter **/
     private Registry registry;
     private String adresse;
+    private int port;
 
-    private JvnRemoteServer jvnServer;
+    /** Server parameter **/
+    private int serverUid = 0;
+
 
     /**
      * Default constructor
      *
      * @throws JvnException
      **/
-    public JvnCoordImpl(String adresse) throws Exception {
+    public JvnCoordImpl(String adresse, int port) throws Exception {
         this.adresse = adresse;
+        this.port = port;
         // to be completed
     }
 
     private void RmiConnect() throws RemoteException, NotBoundException {
-       this.registry = RmiConnection.RmiConnect();
-
-        this.registry.rebind(ConfigManager.buildRmiAddr("NOMSERV", this.adresse), this);
-
-        this.jvnServer = (JvnRemoteServer) this.registry.lookup(ConfigManager.buildRmiAddr("Coord", this.adresse));
-        if(this.jvnServer == null) throw new NotBoundException("null not excepted");
+        this.registry = RmiConnection.RmiConnect(this.port);
+        this.registry.rebind(ConfigManager.buildRmiAddr(rmiName, this.adresse), this);
     }
 
     /**

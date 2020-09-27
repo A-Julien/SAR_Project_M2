@@ -8,7 +8,7 @@ public class RunCoord {
 
     public static void main(String[] args) {
         try {
-            JvnCoordImpl coord = new JvnCoordImpl(_Runnable.address);
+            JvnCoordImpl coord = new JvnCoordImpl(_Runnable.address, _Runnable.port);
             coord.run();
 
 

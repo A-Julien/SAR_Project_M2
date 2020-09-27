@@ -22,6 +22,7 @@ import java.io.*;
  */
 
 public interface JvnRemoteCoord extends Remote {
+    public static String rmiName = "coordService";
 
     /**
      * Allocate a NEW JVN object id (usually allocated to a

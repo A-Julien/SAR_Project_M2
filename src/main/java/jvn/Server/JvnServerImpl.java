@@ -9,6 +9,8 @@
 
 package jvn.Server;
 
+import jvn.App._Runnable;
+import jvn.JvnCoord.JvnCoordImpl;
 import jvn.JvnCoord.JvnRemoteCoord;
 import jvn.JvnException;
 import jvn.RmiServices.ConfigManager;
@@ -38,18 +40,18 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     private Registry registry;
     private JvnRemoteCoord jvnCoord;
 
-    private HashMap<String, JvnObject> interceptorList;
+    private HashMap<Integer, JvnObject> interceptorList;
 
     /**
      * Default constructor
      *
      * @throws JvnException
      **/
-    private JvnServerImpl(String address) throws Exception {
+    private JvnServerImpl() throws Exception {
         super();
         this.interceptorList = new HashMap<>();
 
-        this.adresse = address;
+        this.adresse = _Runnable.address;
 
         try {
             this.RmiConnect();
@@ -67,8 +69,9 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
 
         this.registry.rebind(ConfigManager.buildRmiAddr("NOMSERV", this.adresse), this);
 
-        this.jvnCoord = (JvnRemoteCoord) this.registry.lookup(ConfigManager.buildRmiAddr("Coord", this.adresse));
-        if(this.jvnCoord == null) throw new NotBoundException("null not excepted");
+        this.jvnCoord =
+                (JvnRemoteCoord) this.registry.lookup(ConfigManager.buildRmiAddr(JvnRemoteCoord.rmiName, this.adresse));
+        if(this.jvnCoord == null) throw new NotBoundException("Can not find coordinator");
     }
 
     /**
@@ -77,10 +80,10 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      *
      * @throws JvnException
      **/
-    public static JvnServerImpl jvnGetServer(String address) {
+    public static JvnServerImpl jvnGetServer() {
         if (js == null) {
             try {
-                js = new JvnServerImpl(address);
+                js = new JvnServerImpl();
             } catch (Exception e) {
                 return null;
             }
@@ -105,8 +108,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws JvnException
      **/
     public JvnObject jvnCreateObject(Serializable o) throws jvn.JvnException, RemoteException {
-        int id  = this.jvnCoord.jvnGetObjectId();
-        JvnObject jvnObject = new JvnObjectImpl(o,id,this);
+        JvnObject jvnObject = new JvnObjectImpl(o,this.jvnCoord.jvnGetObjectId());
+        this.interceptorList.put(jvnObject.jvnGetObjectId(), jvnObject);
         return jvnObject;
     }
 
@@ -119,7 +122,6 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      **/
     public void jvnRegisterObject(String jon, JvnObject jo) throws jvn.JvnException, RemoteException {
         this.jvnCoord.jvnRegisterObject(jon,jo,jo.jvnGetObjectId(),this);
-        this.interceptorList.put(jon, jo);
     }
 
     /**
@@ -141,11 +143,12 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public Serializable jvnLockRead(int joi)
-            throws JvnException {
-        // to be completed
-        return null;
-
+    public Serializable jvnLockRead(int joi) throws JvnException {
+        try {
+            return jvnCoord.jvnLockRead(joi, this);
+        } catch (RemoteException e) {
+            throw new JvnException("Error when lock read : " + e.getMessage());
+        }
     }
 
     /**
@@ -155,11 +158,12 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public Serializable jvnLockWrite(int joi)
-            throws JvnException {
-
-        // to be completed
-        return null;
+    public Serializable jvnLockWrite(int joi) throws JvnException {
+        try {
+            return jvnCoord.jvnLockWrite(joi, this);
+        } catch (RemoteException e) {
+            throw new JvnException("Error when lock write : " + e.getMessage());
+        }
     }
 
 
