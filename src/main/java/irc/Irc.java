@@ -33,7 +33,7 @@ public class Irc implements Serializable{
 	   try {
 		   
 		// initialize JVN
-		JvnServerImpl js = JvnServerImpl.jvnGetServer("ds");
+		JvnServerImpl js = JvnServerImpl.jvnGetServer();
 		
 		// look up the IRC object in the JVN server
 		// if not found, create it, and register it in the JVN server
