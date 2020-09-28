@@ -17,14 +17,13 @@ import jvn.RmiServices.RmiConnection;
 import jvn.jvnOject.JvnObject;
 import jvn.jvnOject.JvnObjectImpl;
 
+import java.io.Serializable;
 import java.rmi.NotBoundException;
-
 import java.rmi.RemoteException;
-
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.io.*;
 import java.util.HashMap;
+import java.util.Map;
 
 
 public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer, JvnRemoteServer {
@@ -39,7 +38,9 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     private Registry registry;
     private JvnRemoteCoord jvnCoord;
 
-    private HashMap<Integer, JvnObject> interceptorList;
+    private Map<Integer, JvnObject> interceptorList;
+
+    private Integer uid;
 
     /**
      * Default constructor
@@ -62,10 +63,9 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     private void RmiConnect() throws RemoteException, NotBoundException, JvnException {
         this.registry = RmiConnection.RmiConnect(_Runnable.port);
 
-        this.registry.rebind(ConfigManager.buildRmiAddr(JvnRemoteCoord.rmiName, _Runnable.address), this);
-
         this.jvnCoord =
                 (JvnRemoteCoord) this.registry.lookup(ConfigManager.buildRmiAddr(JvnRemoteCoord.rmiName, _Runnable.address));
+        this.uid = this.jvnCoord.jvnGetServerUid();
         if(this.jvnCoord == null) throw new JvnException("Can not find coordinator");
     }
 
@@ -102,9 +102,9 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @param o : the JVN object state
      * @throws JvnException
      **/
-    public JvnObject jvnCreateObject(Serializable o) throws jvn.JvnException, RemoteException {
-        JvnObject jvnObject = new JvnObjectImpl(o,this.jvnCoord.jvnGetObjectId());
-        this.interceptorList.put(jvnObject.jvnGetObjectId(), jvnObject);
+    public JvnObject jvnCreateObject(Serializable object) throws jvn.JvnException, RemoteException {
+        JvnObject jvnObject = new JvnObjectImpl(object,this.jvnCoord.jvnGetObjectUid());
+        this.interceptorList.put(jvnObject.getUid(), jvnObject);
         return jvnObject;
     }
 
@@ -115,8 +115,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @param jo  : the JVN object
      * @throws JvnException
      **/
-    public void jvnRegisterObject(String jon, JvnObject jo) throws jvn.JvnException, RemoteException {
-        this.jvnCoord.jvnRegisterObject(jon,jo,jo.jvnGetObjectId(),this);
+    public void jvnRegisterObject(String jvnObjectName, JvnObject jvnObject) throws jvn.JvnException, RemoteException {
+        this.jvnCoord.jvnRegisterObject(jvnObjectName, jvnObject, this);
     }
 
     /**
@@ -127,15 +127,15 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws JvnException
      **/
     public JvnObject jvnLookupObject(String jon) throws jvn.JvnException {
-        JvnObject findOject = null;
+        JvnObject findObject = null;
         try {
-            findOject = this.jvnCoord.jvnLookupObject(jon, this);
+            findObject = this.jvnCoord.jvnLookupObject(jon, this);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
-        if (findOject != null) this.interceptorList.put(findOject.jvnGetObjectId(), findOject);
+        if (findObject != null) this.interceptorList.put(findObject.getUid(), findObject);
 
-        return findOject;
+        return findObject;
     }
 
     /**
@@ -205,6 +205,11 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      **/
     public synchronized Serializable jvnInvalidateWriterForReader(int joi) throws java.rmi.RemoteException, jvn.JvnException {
         return this.interceptorList.get(joi).jvnInvalidateWriterForReader();
+    }
+
+    @Override
+    public Integer getUid() {
+        return this.uid;
     }
 }
 

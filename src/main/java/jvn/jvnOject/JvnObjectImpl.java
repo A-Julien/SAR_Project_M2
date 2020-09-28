@@ -1,8 +1,7 @@
 package jvn.jvnOject;
 
 import jvn.JvnException;
-import jvn.Server.JvnLocalServer;
-import jvn.Server.JvnServerImpl;
+import jvn.Server.*;
 
 import java.io.Serializable;
 
@@ -63,14 +62,19 @@ public class JvnObjectImpl implements JvnObject {
     }
 
     @Override
-    public int jvnGetObjectId() throws JvnException {
+    public int getUid() throws JvnException {
         return this.uid;
     }
 
     @Override
-    public Serializable jvnGetSharedObject() throws JvnException {
+    public Serializable getSharedObject() throws JvnException {
         if(this.object != null) return this.object;
         return null;
+    }
+
+    @Override
+    public LockState getCurrentLockState() throws JvnException {
+        return this.lockState;
     }
 
     @Override

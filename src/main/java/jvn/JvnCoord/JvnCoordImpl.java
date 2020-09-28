@@ -9,21 +9,25 @@
 
 package jvn.JvnCoord;
 
+import jvn.App._Runnable;
 import jvn.JvnException;
-import jvn.Server.JvnRemoteServer;
 import jvn.RmiServices.ConfigManager;
 import jvn.RmiServices.RmiConnection;
+import jvn.Server.JvnRemoteServer;
 import jvn.jvnOject.JvnObject;
+import jvn.jvnOject.LockState;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.io.Serializable;
 import java.sql.SQLException;
-
-import jvn.App._Runnable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord, _Runnable{
 
@@ -40,6 +44,22 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
 
     /**
+     * Server to {List of JvnObjectName}
+     */
+    Map<JvnRemoteServer, List<String>> serverToJvnObjectName;
+
+    /**
+     * JvnObjectName to {JvnRemoteServer to jvnLockSate}
+     */
+    Map<String, Map<JvnRemoteServer, LockState>> jvnObjectNameToLock;
+
+    /**
+     * Can e found ut
+     */
+    Map<String, JvnObject> jvnObjectNameToJvnObject;
+
+
+    /**
      * Default constructor
      *
      * @throws JvnException
@@ -47,7 +67,8 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     public JvnCoordImpl(String adresse, int port) throws Exception {
         this.adresse = adresse;
         this.port = port;
-        // to be completed
+        this.serverToJvnObjectName = new HashMap<>();
+        this.jvnObjectNameToLock = new HashMap<>();
     }
 
     private void RmiConnect() throws RemoteException, NotBoundException {
@@ -61,37 +82,52 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      *
      * @throws java.rmi.RemoteException,JvnException
      **/
-    public int jvnGetObjectId() throws java.rmi.RemoteException, jvn.JvnException {
+    public synchronized int jvnGetObjectUid() throws java.rmi.RemoteException, jvn.JvnException {
         return ++interceptorUid;
+    }
+
+    @Override
+    public synchronized int jvnGetServerUid() throws RemoteException, JvnException {
+        return this.serverUid++;
     }
 
     /**
      * Associate a symbolic name with a JVN object
      *
-     * @param jon : the JVN object name
-     * @param jo  : the JVN object
-     * @param joi : the JVN object identification
-     * @param js  : the remote reference of the JVNServer
+     * @param jvnObjectName : the JVN object name
+     * @param jvnObject  : the JVN object
+     * @param jvnRemoteServer  : the remote reference of the JVNServer
      * @throws java.rmi.RemoteException,JvnException
      **/
     @Override
-    public void jvnRegisterObject(String jon, JvnObject jo, int joi, JvnRemoteServer js) throws RemoteException, JvnException {
+    public synchronized void jvnRegisterObject(String jvnObjectName, JvnObject jvnObject, JvnRemoteServer jvnRemoteServer) throws RemoteException, JvnException {
+        if(!this.serverToJvnObjectName.containsKey(jvnRemoteServer))
+            this.serverToJvnObjectName.put(jvnRemoteServer,new ArrayList<>());
+        if(!this.jvnObjectNameToJvnObject.containsKey(jvnObjectName))
+            this.jvnObjectNameToJvnObject.put(jvnObjectName, jvnObject);
 
+        this.serverToJvnObjectName.get(jvnRemoteServer).add(jvnObjectName);
+        this.jvnObjectNameToLock.put(jvnObjectName, new HashMap<>());
+        this.jvnObjectNameToLock.get(jvnObjectName).put(jvnRemoteServer, jvnObject.getCurrentLockState());
     }
 
 
     /**
      * Get the reference of a JVN object managed by a given JVN server
      *
-     * @param jon : the JVN object name
-     * @param js  : the remote reference of the JVNServer
+     * @param jvnObjectName : the JVN object name
+     * @param jvnRemoteServer  : the remote reference of the JVNServer
      * @throws java.rmi.RemoteException,JvnException
      **/
-    public JvnObject jvnLookupObject(String jon, JvnRemoteServer js)
-            throws java.rmi.RemoteException, jvn.JvnException {
-        // to be completed
-        return null;
+    public synchronized JvnObject jvnLookupObject(String jvnObjectName, JvnRemoteServer jvnRemoteServer) throws java.rmi.RemoteException, jvn.JvnException {
+        if(!this.jvnObjectNameToJvnObject.containsKey(jvnObjectName)) return null;
+
+        if(!this.serverToJvnObjectName.get(jvnRemoteServer).contains(jvnObjectName)){
+            this.serverToJvnObjectName.get(jvnRemoteServer).add(jvnObjectName);
+        }
+        return this.jvnObjectNameToJvnObject.get(jvnObjectName);
     }
+
 
     /**
      * Get a Read lock on a JVN object managed by a given JVN server
@@ -101,7 +137,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      * @return the current JVN object state
      * @throws java.rmi.RemoteException, JvnException
      **/
-    public Serializable jvnLockRead(int joi, JvnRemoteServer js)
+    public synchronized Serializable jvnLockRead(int joi, JvnRemoteServer js)
             throws java.rmi.RemoteException, JvnException {
         // to be completed
         return null;
@@ -115,7 +151,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      * @return the current JVN object state
      * @throws java.rmi.RemoteException, JvnException
      **/
-    public Serializable jvnLockWrite(int joi, JvnRemoteServer js)
+    public synchronized Serializable jvnLockWrite(int joi, JvnRemoteServer js)
             throws java.rmi.RemoteException, JvnException {
         // to be completed
         return null;
@@ -127,7 +163,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      * @param js : the remote reference of the server
      * @throws java.rmi.RemoteException, JvnException
      **/
-    public void jvnTerminate(JvnRemoteServer js)
+    public synchronized void jvnTerminate(JvnRemoteServer js)
             throws java.rmi.RemoteException, JvnException {
         // to be completed
     }
@@ -140,7 +176,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
     @Override
     public void stop() throws IOException, NotBoundException, SQLException, InterruptedException {
-        this.registry.unbind(this.buildRmiAddr("Coord", this.adresse));
+        this.registry.unbind(this.buildRmiAddr(this.rmiName, _Runnable.address));
     }
 }
 

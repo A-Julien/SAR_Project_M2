@@ -1,4 +1,4 @@
 {
-  "securityManagerProp":"src/App/security.policy",
+  "securityManagerProp":"src/main/java/jvn/RmiServices/security.policy",
   "bdProp":"Not_Wet"
 }

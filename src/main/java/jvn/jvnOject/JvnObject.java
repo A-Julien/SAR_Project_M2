@@ -9,7 +9,7 @@ package jvn.jvnOject;
 
 import jvn.JvnException;
 
-import java.io.*;
+import java.io.Serializable;
 
 /**
  * Interface of a JVN object.
@@ -50,7 +50,7 @@ public interface JvnObject extends Serializable {
      *
      * @throws JvnException
      **/
-    public int jvnGetObjectId()
+    public int getUid()
             throws jvn.JvnException;
 
     /**
@@ -58,7 +58,15 @@ public interface JvnObject extends Serializable {
      *
      * @throws JvnException
      **/
-    public Serializable jvnGetSharedObject()
+    public Serializable getSharedObject()
+            throws jvn.JvnException;
+
+    /**
+     * Get the shared object associated to this JvnObject
+     *
+     * @throws JvnException
+     **/
+    public LockState getCurrentLockState()
             throws jvn.JvnException;
 
 

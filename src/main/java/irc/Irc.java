@@ -7,15 +7,14 @@
 
 package irc;
 
-import java.awt.*;
-import java.awt.event.*;
-
-
-import jvn.*;
-import jvn.Server.JvnServerImpl;
+import jvn.JvnException;
 import jvn.jvnOject.JvnObject;
+import jvn.Server.*;
 
-import java.io.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.Serializable;
 
 
 public class Irc implements Serializable{
@@ -99,7 +98,7 @@ public class Irc implements Serializable{
 		irc.sentence.jvnLockRead();
 		
 		// invoke the method
-		String s = ((Sentence)(irc.sentence.jvnGetSharedObject())).read();
+		String s = ((Sentence)(irc.sentence.getSharedObject())).read();
 		
 		// unlock the object
 		irc.sentence.jvnUnLock();
@@ -135,7 +134,7 @@ public class Irc implements Serializable{
 		irc.sentence.jvnLockWrite();
 		
 		// invoke the method
-		((Sentence)(irc.sentence.jvnGetSharedObject())).write(s);
+		((Sentence)(irc.sentence.getSharedObject())).write(s);
 		
 		// unlock the object
 		irc.sentence.jvnUnLock();
