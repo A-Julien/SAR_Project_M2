@@ -39,7 +39,7 @@ public abstract class ConfigManager {
      * @param address address of the rmi server
      * @return
      */
-    public static String buildRmiAddr(String name, String address){
-        return "rmi://" + address + "/"+ name;
+    public static String buildRmiAddr(String name, String address, int port){
+        return "rmi://" + address + ":" + port + "/"+ name;
     }
 }

@@ -49,7 +49,10 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      **/
     private JvnServerImpl() throws Exception {
         super();
+
         this.interceptorList = new HashMap<>();
+
+        System.out.println("coucou2");
 
 
         try {
@@ -61,12 +64,16 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     }
 
     private void RmiConnect() throws RemoteException, NotBoundException, JvnException {
-        this.registry = RmiConnection.RmiConnect(_Runnable.port);
+        System.out.println("coucou1");
+
+        this.registry = RmiConnection.RmiConnect(_Runnable.port, false);
 
         this.jvnCoord =
-                (JvnRemoteCoord) this.registry.lookup(ConfigManager.buildRmiAddr(JvnRemoteCoord.rmiName, _Runnable.address));
+                (JvnRemoteCoord) this.registry.lookup(
+                        ConfigManager.buildRmiAddr(JvnRemoteCoord.rmiName, _Runnable.address, _Runnable.port));
         this.uid = this.jvnCoord.jvnGetServerUid();
         if(this.jvnCoord == null) throw new JvnException("Can not find coordinator");
+        System.out.println(this.jvnCoord.sayHello());
     }
 
     /**
@@ -99,7 +106,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     /**
      * creation of a JVN object
      *
-     * @param o : the JVN object state
+     * @param object : the JVN object state
      * @throws JvnException
      **/
     public JvnObject jvnCreateObject(Serializable object) throws jvn.JvnException, RemoteException {
@@ -111,25 +118,25 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     /**
      * Associate a symbolic name with a JVN object
      *
-     * @param jon : the JVN object name
-     * @param jo  : the JVN object
+     * @param jvnObjectName : the JVN object name
+     * @param jvnObject  : the JVN object
      * @throws JvnException
      **/
-    public void jvnRegisterObject(String jvnObjectName, JvnObject jvnObject) throws jvn.JvnException, RemoteException {
-        this.jvnCoord.jvnRegisterObject(jvnObjectName, jvnObject, this);
+    public synchronized void jvnRegisterObject(String jvnObjectName, JvnObject jvnObject) throws jvn.JvnException, RemoteException {
+        this.jvnCoord.jvnRegisterObject(jvnObjectName, jvnObject, (JvnRemoteServer) this);
     }
 
     /**
      * Provide the reference of a JVN object beeing given its symbolic name
      *
-     * @param jon : the JVN object name
+     * @param jvnObjectName : the JVN object name
      * @return the JVN object
      * @throws JvnException
      **/
-    public JvnObject jvnLookupObject(String jon) throws jvn.JvnException {
+    public synchronized JvnObject jvnLookupObject(String jvnObjectName) throws jvn.JvnException {
         JvnObject findObject = null;
         try {
-            findObject = this.jvnCoord.jvnLookupObject(jon, this);
+            findObject = this.jvnCoord.jvnLookupObject(jvnObjectName, this);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -145,7 +152,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public Serializable jvnLockRead(int joi) throws JvnException {
+    public synchronized Serializable jvnLockRead(int joi) throws JvnException {
         try {
             return jvnCoord.jvnLockRead(joi, this);
         } catch (RemoteException e) {
@@ -160,7 +167,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public Serializable jvnLockWrite(int joi) throws JvnException {
+    public synchronized Serializable jvnLockWrite(int joi) throws JvnException {
         try {
             return jvnCoord.jvnLockWrite(joi, this);
         } catch (RemoteException e) {
@@ -208,7 +215,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     }
 
     @Override
-    public Integer getUid() {
+    public synchronized Integer getUid() throws java.rmi.RemoteException{
         return this.uid;
     }
 }

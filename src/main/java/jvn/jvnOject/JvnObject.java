@@ -28,6 +28,8 @@ public interface JvnObject extends Serializable {
     public void jvnLockRead()
             throws jvn.JvnException;
 
+    public void updateSharedObject(Serializable object);
+
     /**
      * Get a Write lock on the object
      *

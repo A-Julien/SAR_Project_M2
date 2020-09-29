@@ -22,7 +22,7 @@ public class RunCoord {
             }
 
         } catch (Exception e) {
-            System.err.println("Error on server :" + e);
+            System.err.println("[Error]Coordinator :" + e);
             e.printStackTrace();
         }
     }

@@ -9,44 +9,55 @@ public class JvnObjectImpl implements JvnObject {
 
     private final int uid; //Unique ID given by coordinator
 
-    JvnLocalServer server;
 
     Serializable object;
     LockState lockState;
 
     public JvnObjectImpl(Serializable object, int uid) throws JvnException {
-        this.server = JvnServerImpl.jvnGetServer();
-
         this.object = object;
         this.uid = uid;
-        this.jvnLockWrite(); // after creation, I have a write lock on the object
+        this.lockState = LockState.W;//this.jvnLockWrite(); // after creation, I have a write lock on the object
     }
 
     @Override
     public void jvnLockRead() throws JvnException {
-        this.object = this.server.jvnLockRead(this.uid);
+        JvnLocalServer server= JvnServerImpl.jvnGetServer();
+        this.object = server.jvnLockRead(this.uid);
         this.lockState = LockState.R;
     }
 
     @Override
+    public void updateSharedObject(Serializable object) {
+        this.object = object;
+    }
+
+    @Override
     public void jvnLockWrite() throws JvnException {
+       JvnLocalServer server;
+
         switch (this.lockState){
             case NL:
-                this.object = this.server.jvnLockWrite(this.uid);
+                server = JvnServerImpl.jvnGetServer();
+                this.object = server.jvnLockWrite(this.uid);
                 this.lockState = LockState.W;
                 break;
             case RC:
-                this.object = this.server.jvnLockWrite(this.uid);
+                server = JvnServerImpl.jvnGetServer();
+                this.object = server.jvnLockWrite(this.uid);
                 this.lockState = LockState.RWC;
                 break;
             case WC:
                 this.lockState = LockState.W;
+                break;
+            case R:
                 break;
             default:
                 throw new JvnException("failed to acquire lock write, bad state : " + this.lockState);
         }
 
     }
+
+
 
     @Override
     public synchronized void jvnUnLock() throws JvnException {
@@ -133,6 +144,8 @@ public class JvnObjectImpl implements JvnObject {
                 break;
             case RWC:
                 this.lockState = LockState.R;
+            case WC:
+                this.lockState = LockState.NL;
             default:
                 throw new JvnException("Error when invalidate writer for reader, bad state : " + this.lockState);
         }

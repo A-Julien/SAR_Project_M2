@@ -14,6 +14,7 @@ import jvn.JvnException;
 
 import java.io.Serializable;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 
 /**
@@ -51,7 +52,7 @@ public interface JvnRemoteServer extends Remote {
     public Serializable jvnInvalidateWriterForReader(int joi)
             throws java.rmi.RemoteException, jvn.JvnException;
 
-    public Integer getUid();
+    public Integer getUid() throws RemoteException;
 
 }
 

@@ -8,7 +8,6 @@ import java.sql.SQLException;
 public interface _Runnable {
     final static int port = 1099;
     final static String address = "127.0.0.1";
-    final String ChatComponent = "talk";
 
 
     /**

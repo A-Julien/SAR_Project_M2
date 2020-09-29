@@ -1,6 +1,8 @@
 package jvn.jvnOject;
 
-public enum LockState {
+import java.io.Serializable;
+
+public enum LockState implements Serializable {
     R,
     W,
     RC,

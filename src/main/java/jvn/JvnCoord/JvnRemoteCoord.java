@@ -15,6 +15,7 @@ import jvn.jvnOject.JvnObject;
 
 import java.io.Serializable;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 
 /**
@@ -87,6 +88,8 @@ public interface JvnRemoteCoord extends Remote {
      **/
     public void jvnTerminate(JvnRemoteServer js)
             throws java.rmi.RemoteException, JvnException;
+
+    public String sayHello() throws RemoteException, JvnException;
 
 }
 
