@@ -41,16 +41,20 @@ public class JvnObjectImpl implements JvnObject {
                 this.object = server.jvnLockWrite(this.uid);
                 this.lockState = LockState.W;
                 break;
+
             case RC:
                 server = JvnServerImpl.jvnGetServer();
                 this.object = server.jvnLockWrite(this.uid);
                 this.lockState = LockState.RWC;
                 break;
+
             case WC:
                 this.lockState = LockState.W;
                 break;
+
             case R:
                 break;
+
             default:
                 throw new JvnException("failed to acquire lock write, bad state : " + this.lockState);
         }
@@ -126,7 +130,7 @@ public class JvnObjectImpl implements JvnObject {
                 this.jvnInvalidateReader();
                 break;
             default:
-                throw new JvnException("Error when invalidate lock read, bad state : " + this.lockState);
+                throw new JvnException("Error when invalidate lock write, bad state : " + this.lockState);
         }
         return object;
     }
@@ -144,8 +148,10 @@ public class JvnObjectImpl implements JvnObject {
                 break;
             case RWC:
                 this.lockState = LockState.R;
+                break;
             case WC:
-                this.lockState = LockState.NL;
+                this.lockState = LockState.RC;
+                break;
             default:
                 throw new JvnException("Error when invalidate writer for reader, bad state : " + this.lockState);
         }

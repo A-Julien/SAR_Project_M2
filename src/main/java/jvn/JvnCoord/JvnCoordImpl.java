@@ -124,15 +124,21 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
             this.jvnObjectNameToJvnObject.put(jvnObjectName, jvnObject);
         }
+
+        this.jvnObjectNameToUid.put(jvnObjectName,jvnObject.getUid());
+
         this.jvnObjectUidToLock.put(jvnObject.getUid(), new HashMap<>());
         switch (jvnObject.getCurrentLockState()){
             case RWC:
             case WC:
                 this.jvnObjectUidToLock.get(jvnObject.getUid()).put(jvnRemoteServer, LockState.W);
+                break;
             case RC:
                 this.jvnObjectUidToLock.get(jvnObject.getUid()).put(jvnRemoteServer, LockState.R);
+                break;
             default:
                 this.jvnObjectUidToLock.get(jvnObject.getUid()).put(jvnRemoteServer, jvnObject.getCurrentLockState());
+                break;
         }
     }
 
@@ -190,7 +196,9 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
                 Serializable newObject = entry.getKey().jvnInvalidateWriterForReader(jvnObjectUid);
                 this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).updateSharedObject(newObject);
 
-                this.jvnObjectUidToLock.get(jvnObjectUid).replace(jvnRemoteServer, LockState.R);
+                this.jvnObjectUidToLock.get(jvnObjectUid).replace(entry.getKey(), LockState.R);
+                if(entry.getKey() != jvnRemoteServer)
+                        this.jvnObjectUidToLock.get(jvnObjectUid).put(jvnRemoteServer, LockState.R);
                 return newObject;
             }
         }
@@ -234,17 +242,19 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
                 case R:
                     entry.getKey().jvnInvalidateReader(jvnObjectUid);
                     this.jvnObjectUidToLock.get(jvnObjectUid).remove(entry.getKey());
+                    break;
 
                 case W:
                     Serializable newObject = entry.getKey().jvnInvalidateWriter(jvnObjectUid);
                     this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).updateSharedObject(newObject);
                     this.jvnObjectUidToLock.get(jvnObjectUid).remove(entry.getKey());
+                    break;
             }
         }
 
         this.jvnObjectUidToLock.get(jvnObjectUid).put(jvnRemoteServer, LockState.W);
 
-        return   this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid));
+        return  this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid));
     }
 
     /**
