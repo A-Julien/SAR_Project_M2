@@ -20,41 +20,45 @@ public class JvnObjectImpl implements JvnObject {
     }
 
     @Override
-    public void jvnLockRead() throws JvnException {
+    public synchronized void jvnLockRead() throws JvnException {
+        System.out.println("[JvnObject] jvnLockRead state -> " + this.lockState);
         JvnLocalServer server= JvnServerImpl.jvnGetServer();
-        this.object = server.jvnLockRead(this.uid);
-        this.lockState = LockState.R;
+        switch (this.lockState){
+            case NL:
+            case WC:
+                this.object = server.jvnLockRead(this.uid);
+                this.lockState = LockState.R;
+                break;
+            case RWC:
+            case RC:
+                this.lockState = LockState.R;
+            default:
+                throw new JvnException("failed to acquire lock read, bad state : " + this.lockState);
+
+        }
     }
 
     @Override
-    public void updateSharedObject(Serializable object) {
+    public synchronized void updateSharedObject(Serializable object) {
         this.object = object;
     }
 
     @Override
-    public void jvnLockWrite() throws JvnException {
+    public synchronized void jvnLockWrite() throws JvnException {
+        System.out.println("[JvnObject] jvnLockWrite state -> " + this.lockState);
        JvnLocalServer server;
 
         switch (this.lockState){
+            case RC:
             case NL:
                 server = JvnServerImpl.jvnGetServer();
+                assert server != null;
                 this.object = server.jvnLockWrite(this.uid);
                 this.lockState = LockState.W;
                 break;
-
-            case RC:
-                server = JvnServerImpl.jvnGetServer();
-                this.object = server.jvnLockWrite(this.uid);
-                this.lockState = LockState.RWC;
-                break;
-
             case WC:
                 this.lockState = LockState.W;
                 break;
-
-            case R:
-                break;
-
             default:
                 throw new JvnException("failed to acquire lock write, bad state : " + this.lockState);
         }
@@ -73,6 +77,7 @@ public class JvnObjectImpl implements JvnObject {
                 this.lockState = LockState.WC;
                 break;
         }
+        System.out.println("[JvnObject] new state -> " + this.lockState);
         this.notify(); // notify that dev free lock to unlock invalidate routine
     }
 
@@ -94,6 +99,7 @@ public class JvnObjectImpl implements JvnObject {
 
     @Override
     public synchronized void jvnInvalidateReader() throws JvnException {
+        System.out.println("[JvnObject] jvnInvalidateReader " + this.lockState);
         switch (this.lockState){
             case RC:
                 this.lockState = LockState.NL;
@@ -113,6 +119,7 @@ public class JvnObjectImpl implements JvnObject {
 
     @Override
     public synchronized Serializable jvnInvalidateWriter() throws JvnException {
+        System.out.println("[JvnObject] jvnInvalidateWriter " + this.lockState);
         switch (this.lockState){
             case WC:
                 this.lockState = LockState.NL;
@@ -125,18 +132,15 @@ public class JvnObjectImpl implements JvnObject {
                 }
                 this.lockState = LockState.NL;
                 break;
-            case RWC:
-                this.jvnInvalidateWriterForReader();
-                this.jvnInvalidateReader();
-                break;
             default:
                 throw new JvnException("Error when invalidate lock write, bad state : " + this.lockState);
         }
-        return object;
+        return this.object;
     }
 
     @Override
     public synchronized Serializable jvnInvalidateWriterForReader() throws JvnException {
+        System.out.println("[JvnObject] jvnInvalidateWriterForReader state -> " + this.lockState);
         switch (this.lockState){
             case W:
                 try {
@@ -155,6 +159,6 @@ public class JvnObjectImpl implements JvnObject {
             default:
                 throw new JvnException("Error when invalidate writer for reader, bad state : " + this.lockState);
         }
-        return object;
+        return this.object;
     }
 }

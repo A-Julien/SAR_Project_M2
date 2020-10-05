@@ -52,9 +52,6 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
 
         this.interceptorList = new HashMap<>();
 
-        System.out.println("coucou2");
-
-
         try {
             this.RmiConnect();
         } catch (RemoteException e) {
@@ -64,7 +61,6 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     }
 
     private void RmiConnect() throws RemoteException, NotBoundException, JvnException {
-        System.out.println("coucou1");
 
         this.registry = RmiConnection.RmiConnect(_Runnable.port, false);
 
@@ -109,7 +105,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @param object : the JVN object state
      * @throws JvnException
      **/
-    public JvnObject jvnCreateObject(Serializable object) throws jvn.JvnException, RemoteException {
+    public synchronized JvnObject jvnCreateObject(Serializable object) throws jvn.JvnException, RemoteException {
         JvnObject jvnObject = new JvnObjectImpl(object,this.jvnCoord.jvnGetObjectUid());
         this.interceptorList.put(jvnObject.getUid(), jvnObject);
         return jvnObject;
@@ -123,7 +119,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws JvnException
      **/
     public synchronized void jvnRegisterObject(String jvnObjectName, JvnObject jvnObject) throws jvn.JvnException, RemoteException {
-        this.jvnCoord.jvnRegisterObject(jvnObjectName, jvnObject, (JvnRemoteServer) this);
+        this.jvnCoord.jvnRegisterObject(jvnObjectName, jvnObject,  this);
     }
 
     /**
@@ -185,6 +181,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws java.rmi.RemoteException,JvnException
      **/
     public synchronized void jvnInvalidateReader(int joi) throws java.rmi.RemoteException, jvn.JvnException {
+        System.out.println("[Server] jvnInvalidateReader  joi : " + joi);
         this.interceptorList.get(joi).jvnInvalidateReader();
     }
 
@@ -214,8 +211,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         return this.interceptorList.get(joi).jvnInvalidateWriterForReader();
     }
 
-    @Override
-    public synchronized Integer getUid() throws java.rmi.RemoteException{
+    public Integer getUid() throws java.rmi.RemoteException, jvn.JvnException{
         return this.uid;
     }
 }
