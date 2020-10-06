@@ -260,6 +260,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
                         toRemove.add(entry.getKey());
                         break;
                     default:
+                        logger.error(Formatter.log(lvl.ERROR, "jvnLockWrite error" ));
                         throw new JvnException("[Coord] error ");
                 }
             }
