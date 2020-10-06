@@ -14,8 +14,12 @@ import jvn.JvnException;
 import jvn.RmiServices.ConfigManager;
 import jvn.RmiServices.RmiConnection;
 import jvn.Server.JvnRemoteServer;
+import jvn.Utils.Formatter;
+import jvn.Utils.lvl;
 import jvn.jvnOject.JvnObject;
 import jvn.jvnOject.LockState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -30,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 
 public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord, _Runnable{
+
+    final static Logger logger = LoggerFactory.getLogger(JvnCoordImpl.class);
+
 
     private static final long serialVersionUID = 1L;
     private static int interceptorUid = 0;
@@ -83,7 +90,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         try {
             this.registry.rebind(ConfigManager.buildRmiAddr(this.rmiName, _Runnable.address, _Runnable.port), this);
         } catch (RemoteException e) {
-            System.out.println("Coordinator failed to start");
+            logger.error("Coordinator failed to start");
             System.exit(1);
         }
     }
@@ -224,8 +231,6 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      **/
      public synchronized Serializable jvnLockWrite(int jvnObjectUid, JvnRemoteServer jvnRemoteServer)
             throws java.rmi.RemoteException, JvnException {
-         System.out.println("rmtServ = " + jvnRemoteServer);
-         System.out.println(this.jvnObjectUidToLock);
 
         if(!this.jvnObjectUidToLock.containsKey(jvnObjectUid)) //TODO INSURE
             throw new JvnException("Error, object uid : " + jvnObjectUid + " not found");
@@ -242,37 +247,27 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
          List<JvnRemoteServer> toRemove = new ArrayList<>();
         for (Map.Entry<JvnRemoteServer, LockState> entry : jvnObjectUidToLock.get(jvnObjectUid).entrySet()) {
-            System.out.println("infor");
-            System.out.println(entry.getKey().getUid());
-            System.out.println(jvnRemoteServer.getUid());
             if (!entry.getKey().getUid().equals(jvnRemoteServer.getUid())){
-                //System.out.println("not equal");
                 switch (entry.getValue()){
                     case R:
                         entry.getKey().jvnInvalidateReader(jvnObjectUid);
                         toRemove.add(entry.getKey());
-                        //this.jvnObjectUidToLock.get(jvnObjectUid).remove(entry.getKey());
                         break;
 
                     case W:
                         Serializable newObject = entry.getKey().jvnInvalidateWriter(jvnObjectUid);
                         this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).updateSharedObject(newObject);
-                        //this.jvnObjectUidToLock.get(jvnObjectUid).remove(entry.getKey());
                         toRemove.add(entry.getKey());
                         break;
                     default:
-                        System.exit(-1);
+                        throw new JvnException("[Coord] error ");
                 }
             }
         }
 
-        for (JvnRemoteServer server : toRemove) {
-                System.out.println(server);
-                System.out.println("rm = " + this.jvnObjectUidToLock.get(jvnObjectUid).remove(server));
-        }
+        for (JvnRemoteServer server : toRemove) this.jvnObjectUidToLock.get(jvnObjectUid).remove(server);
 
-         System.out.println(jvnRemoteServer);
-         System.out.println("rm = " + this.jvnObjectUidToLock.get(jvnObjectUid).remove(jvnRemoteServer));
+         this.jvnObjectUidToLock.get(jvnObjectUid).remove(jvnRemoteServer);
 
         this.jvnObjectUidToLock.get(jvnObjectUid).put(jvnRemoteServer, LockState.W);
 
@@ -293,6 +288,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     @Override
     public int run() throws Exception {
         this.RmiConnect();
+        logger.info(Formatter.log(lvl.INFO, "Rmi connection ok"));
         return 0;
     }
 

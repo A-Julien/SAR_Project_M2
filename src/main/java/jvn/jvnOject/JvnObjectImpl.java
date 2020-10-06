@@ -32,6 +32,7 @@ public class JvnObjectImpl implements JvnObject {
             case RWC:
             case RC:
                 this.lockState = LockState.R;
+                break;
             default:
                 throw new JvnException("failed to acquire lock read, bad state : " + this.lockState);
 
