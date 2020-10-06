@@ -2,6 +2,7 @@ irc
 jvn
 jvn.App
 jvn.JvnCoord
+jvn.Proxy
 jvn.RmiServices
 jvn.Server
 jvn.Utils
