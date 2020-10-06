@@ -4,6 +4,8 @@ import jvn.JvnException;
 import jvn.Server.*;
 
 import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
 public class JvnObjectImpl implements JvnObject {
 

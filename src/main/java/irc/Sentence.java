@@ -8,6 +8,8 @@
 
 package irc;
 
+import jvn.Proxy.JvnAnnotation;
+
 public class Sentence implements java.io.Serializable {
 	/**
 	 * 
@@ -18,10 +20,13 @@ public class Sentence implements java.io.Serializable {
 	public Sentence() {
 		data = new String("");
 	}
-	
+
+	@JvnAnnotation(type="_W")
 	public void write(String text) {
 		data = text;
 	}
+
+	@JvnAnnotation(type ="_R")
 	public String read() {
 		return data;	
 	}
