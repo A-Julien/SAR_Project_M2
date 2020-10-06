@@ -1,8 +1,6 @@
 package jvn.Proxy;
 
 
-import irc.Irc;
-import irc.Sentence;
 import jvn.Server.JvnServerImpl;
 import jvn.jvnOject.JvnObject;
 

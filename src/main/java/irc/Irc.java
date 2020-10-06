@@ -39,7 +39,7 @@ public class Irc implements Serializable{
 		JvnObject jo = js.jvnLookupObject("IRC");
 
 		if (jo == null) {
-			jo = js.jvnCreateObject((Serializable) new Sentence());
+			jo = js.jvnCreateObject((Serializable) new SentenceImpl());
 			// after creation, I have a write lock on the object
 			jo.jvnUnLock();
 
@@ -99,7 +99,7 @@ public class Irc implements Serializable{
 		irc.sentence.jvnLockRead();
 		
 		// invoke the method
-		String s = ((Sentence)(irc.sentence.getSharedObject())).read();
+		String s = ((SentenceImpl)(irc.sentence.getSharedObject())).read();
 		
 		// unlock the object
 		irc.sentence.jvnUnLock();
@@ -135,7 +135,7 @@ public class Irc implements Serializable{
 		irc.sentence.jvnLockWrite();
 		
 		// invoke the method
-		((Sentence)(irc.sentence.getSharedObject())).write(s);
+		((SentenceImpl)(irc.sentence.getSharedObject())).write(s);
 		
 		// unlock the object
 		irc.sentence.jvnUnLock();
