@@ -14,12 +14,10 @@ import jvn.JvnException;
 import jvn.RmiServices.ConfigManager;
 import jvn.RmiServices.RmiConnection;
 import jvn.Server.JvnRemoteServer;
-import jvn.Utils.Formatter;
-import jvn.Utils.lvl;
 import jvn.jvnOject.JvnObject;
 import jvn.jvnOject.LockState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -35,7 +33,7 @@ import java.util.Map;
 
 public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord, _Runnable{
 
-    final static Logger logger = LoggerFactory.getLogger(JvnCoordImpl.class);
+    private static final Logger logger = LogManager.getLogger(JvnCoordImpl.class);
 
 
     private static final long serialVersionUID = 1L;
@@ -184,6 +182,8 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      **/
     public synchronized Serializable jvnLockRead(int jvnObjectUid, JvnRemoteServer jvnRemoteServer)
             throws java.rmi.RemoteException, JvnException {
+        logger.info("server " + jvnRemoteServer.getUid() + " want ReadLock on " + jvnObjectUid);
+
 
         if(!this.jvnObjectUidToLock.containsKey(jvnObjectUid))
             throw new JvnException("Error, object uid : " + jvnObjectUid + " not found");
@@ -231,6 +231,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      **/
      public synchronized Serializable jvnLockWrite(int jvnObjectUid, JvnRemoteServer jvnRemoteServer)
             throws java.rmi.RemoteException, JvnException {
+         logger.info("server " + jvnRemoteServer.getUid() + "want writeLock on " + jvnObjectUid);
 
         if(!this.jvnObjectUidToLock.containsKey(jvnObjectUid)) //TODO INSURE
             throw new JvnException("Error, object uid : " + jvnObjectUid + " not found");
@@ -260,7 +261,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
                         toRemove.add(entry.getKey());
                         break;
                     default:
-                        logger.error(Formatter.log(lvl.ERROR, "jvnLockWrite error" ));
+                        logger.error("jvnLockWrite error" );
                         throw new JvnException("[Coord] error ");
                 }
             }
@@ -289,7 +290,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     @Override
     public int run() throws Exception {
         this.RmiConnect();
-        logger.info(Formatter.log(lvl.INFO, "Rmi connection ok"));
+        logger.info("RMI OK");//Formatter.log(lvl.INFO, "Rmi connection ok"));
         return 0;
     }
 

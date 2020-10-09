@@ -12,8 +12,8 @@ public abstract class Formatter {
 
     private static Map<lvl, String> createMap(){
         Map<lvl, String> t = new HashMap<>();
-        t.put(lvl.INFO,  "[" + ConsoleColors.GREEN +  lvl.INFO + ConsoleColors.RESET + "] " + ConsoleColors.GREEN_BACKGROUND_BRIGHT);
-        t.put(lvl.ERROR, "[" + ConsoleColors.RED +  lvl.ERROR + ConsoleColors.RESET + "] " + ConsoleColors.RED_BACKGROUND_BRIGHT);
+        t.put(lvl.INFO,  "[" + ConsoleColors.GREEN +  lvl.INFO + ConsoleColors.RESET + "] " + ConsoleColors.GREEN_BOLD_BRIGHT);
+        t.put(lvl.ERROR, "[" + ConsoleColors.RED +  lvl.ERROR + ConsoleColors.RESET + "] " + ConsoleColors.RED_BOLD_BRIGHT);
         t.put(lvl.DEBUG, "[" + ConsoleColors.YELLOW +  lvl.DEBUG + ConsoleColors.RESET + "] ");
         return t;
     }
