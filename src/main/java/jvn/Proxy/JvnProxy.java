@@ -3,12 +3,16 @@ package jvn.Proxy;
 
 import jvn.Server.JvnServerImpl;
 import jvn.jvnOject.JvnObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
 public class JvnProxy implements InvocationHandler {
+    private static final Logger logger = LogManager.getLogger(JvnProxy.class);
+
 
     private JvnObject jvnObject;
 
@@ -53,7 +57,9 @@ public class JvnProxy implements InvocationHandler {
             jvnObject.jvnUnLock();
             return res;
 
-        } catch (Exception e){}
+        } catch (Exception e){
+            logger.error("Error when invoke method", e);
+        }
         return null;
     }
 }

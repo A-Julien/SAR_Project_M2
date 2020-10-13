@@ -71,6 +71,14 @@ public interface JvnObject extends Serializable {
     public LockState getCurrentLockState()
             throws jvn.JvnException;
 
+    /**
+     * Get the shared object associated to this JvnObject
+     *
+     * @throws JvnException
+     **/
+    public void setCurrentLockState(LockState lockState)
+            throws jvn.JvnException;
+
 
     /**
      * Invalidate the Read lock of the JVN object

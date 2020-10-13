@@ -83,10 +83,10 @@ public interface JvnRemoteCoord extends Remote {
     /**
      * A JVN server terminates
      *
-     * @param js : the remote reference of the server
+     * @param jsUid : the remote reference of the server
      * @throws java.rmi.RemoteException, JvnException
      **/
-    public void jvnTerminate(JvnRemoteServer js)
+    public void jvnTerminate(Integer jsUid)
             throws java.rmi.RemoteException, JvnException;
 
     public String sayHello() throws RemoteException, JvnException;

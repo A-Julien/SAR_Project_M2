@@ -16,6 +16,8 @@ import jvn.RmiServices.ConfigManager;
 import jvn.RmiServices.RmiConnection;
 import jvn.jvnOject.JvnObject;
 import jvn.jvnOject.JvnObjectImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.rmi.NotBoundException;
@@ -27,6 +29,8 @@ import java.util.Map;
 
 
 public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer, JvnRemoteServer {
+    private static final Logger logger = LogManager.getLogger(JvnServerImpl.class);
+
 
     /**
      *
@@ -55,7 +59,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         try {
             this.RmiConnect();
         } catch (RemoteException e) {
-            System.out.println("Server Failed to start");
+            logger.error("Server Failed to start");
             System.exit(1);
         }
     }
@@ -69,7 +73,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
                         ConfigManager.buildRmiAddr(JvnRemoteCoord.rmiName, _Runnable.address, _Runnable.port));
         this.uid = this.jvnCoord.jvnGetServerUid();
         if(this.jvnCoord == null) throw new JvnException("Can not find coordinator");
-        System.out.println(this.jvnCoord.sayHello());
+        logger.info(this.jvnCoord.sayHello());
+        logger.info("My Uid is : " + this.uid);
     }
 
     /**
@@ -181,7 +186,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws java.rmi.RemoteException,JvnException
      **/
     public synchronized void jvnInvalidateReader(int joi) throws java.rmi.RemoteException, jvn.JvnException {
-        System.out.println("[Server] jvnInvalidateReader  joi : " + joi);
+        logger.info("jvnInvalidateReader  joi : " + joi);
         this.interceptorList.get(joi).jvnInvalidateReader();
     }
 

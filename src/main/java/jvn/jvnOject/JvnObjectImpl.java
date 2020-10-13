@@ -1,13 +1,17 @@
 package jvn.jvnOject;
 
 import jvn.JvnException;
-import jvn.Server.*;
+import jvn.Proxy.JvnProxy;
+import jvn.Server.JvnLocalServer;
+import jvn.Server.JvnServerImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
 
 public class JvnObjectImpl implements JvnObject {
+    private static final Logger logger = LogManager.getLogger(JvnProxy.class);
+
 
     private final int uid; //Unique ID given by coordinator
 
@@ -23,13 +27,17 @@ public class JvnObjectImpl implements JvnObject {
 
     @Override
     public synchronized void jvnLockRead() throws JvnException {
-        System.out.println("[JvnObject] jvnLockRead state -> " + this.lockState);
+        logger.info("jvnLockRead state -> " + this.lockState);
         JvnLocalServer server= JvnServerImpl.jvnGetServer();
         switch (this.lockState){
             case NL:
-            case WC:
                 this.object = server.jvnLockRead(this.uid);
                 this.lockState = LockState.R;
+                break;
+            case WC:
+                //this.object = server.jvnLockRead(this.uid);
+                //this.lockState = LockState.R;
+                this.lockState = LockState.RWC;
                 break;
             case RWC:
             case RC:
@@ -48,7 +56,7 @@ public class JvnObjectImpl implements JvnObject {
 
     @Override
     public synchronized void jvnLockWrite() throws JvnException {
-        System.out.println("[JvnObject] jvnLockWrite state -> " + this.lockState);
+        logger.info("jvnLockWrite state -> " + this.lockState);
        JvnLocalServer server;
 
         switch (this.lockState){
@@ -59,6 +67,7 @@ public class JvnObjectImpl implements JvnObject {
                 this.object = server.jvnLockWrite(this.uid);
                 this.lockState = LockState.W;
                 break;
+            case RWC:
             case WC:
                 this.lockState = LockState.W;
                 break;
@@ -80,7 +89,7 @@ public class JvnObjectImpl implements JvnObject {
                 this.lockState = LockState.WC;
                 break;
         }
-        System.out.println("[JvnObject] new state -> " + this.lockState);
+        logger.info("new state -> " + this.lockState);
         this.notify(); // notify that dev free lock to unlock invalidate routine
     }
 
@@ -100,9 +109,19 @@ public class JvnObjectImpl implements JvnObject {
         return this.lockState;
     }
 
+    /**
+     * Get the shared object associated to this JvnObject
+     *
+     * @throws JvnException
+     **/
+    @Override
+    public void setCurrentLockState(LockState lockState) throws jvn.JvnException{
+        this.lockState = lockState;
+    }
+
     @Override
     public synchronized void jvnInvalidateReader() throws JvnException {
-        System.out.println("[JvnObject] jvnInvalidateReader " + this.lockState);
+        logger.info("jvnInvalidateReader " + this.lockState);
         switch (this.lockState){
             case RC:
                 this.lockState = LockState.NL;
@@ -122,7 +141,7 @@ public class JvnObjectImpl implements JvnObject {
 
     @Override
     public synchronized Serializable jvnInvalidateWriter() throws JvnException {
-        System.out.println("[JvnObject] jvnInvalidateWriter " + this.lockState);
+        logger.info("jvnInvalidateWriter " + this.lockState);
         switch (this.lockState){
             case WC:
                 this.lockState = LockState.NL;
@@ -143,7 +162,7 @@ public class JvnObjectImpl implements JvnObject {
 
     @Override
     public synchronized Serializable jvnInvalidateWriterForReader() throws JvnException {
-        System.out.println("[JvnObject] jvnInvalidateWriterForReader state -> " + this.lockState);
+        logger.info("jvnInvalidateWriterForReader state -> " + this.lockState);
         switch (this.lockState){
             case W:
                 try {
