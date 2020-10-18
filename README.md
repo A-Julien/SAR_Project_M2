@@ -17,7 +17,7 @@ La documentation des fonctions est disponnible dans la [javadoc](https://a-julie
 ## Usage
 ### Declare Read/Write methods by add annotations in an Interface
 
-```     
+```java
         @JvnAnnotation(type="_W")
         public void write(...);
     
@@ -26,10 +26,16 @@ La documentation des fonctions est disponnible dans la [javadoc](https://a-julie
 ```
 ### Share your object
 
-``` myObj obj = (myObj) JvnProxy.newInstance(new myObj(), "<NAMETOSHARE>"); ```
+```java
+myObj obj = (myObj) JvnProxy.newInstance(new myObj(), "<NAMETOSHARE>"); 
+```
 
 ### Use your object
 
-``` obj.read(); ```
+```java
+obj.read(); 
+```
 
-``` obj.write(...); ```
+```java
+obj.write(...); 
+```
