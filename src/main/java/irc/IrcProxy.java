@@ -31,7 +31,8 @@ public class IrcProxy implements Serializable{
             Sentence jo0 = (Sentence) JvnProxy.newInstance(new SentenceImpl(), "IRC0");
 
             // create the graphical part of the Chat application
-            new IrcProxy(jo0);
+            IrcProxy irc = new IrcProxy(jo0);
+            //stressIrc(irc, jo0);
 
         } catch (Exception e) {
             System.out.println("IRC problem : " + e.getMessage());
@@ -41,6 +42,17 @@ public class IrcProxy implements Serializable{
     public void stressIrc(Sentence jo){
         this.sentence.write("test");
         jo.read();
+    }
+
+    public static void stressIrc(IrcProxy irc, Sentence jo){
+        while(true) {
+            String s1 = "test";
+            irc.sentence.write(s1);
+
+            String s0 = irc.sentence.read();
+            irc.data.setText(s0);
+            irc.text.append(s0 + "\n");
+        }
     }
 
     /**
