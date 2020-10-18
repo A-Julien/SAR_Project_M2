@@ -63,6 +63,10 @@ public class JvnObjectImpl implements JvnObject {
         }
     }
 
+    /**
+     * Update the object
+     * @param object
+     */
     @Override
     public synchronized void updateSharedObject(Serializable object) {
         this.object = object;
@@ -98,7 +102,10 @@ public class JvnObjectImpl implements JvnObject {
     }
 
 
-
+    /**
+     * flush lock
+     * @throws JvnException
+     */
     @Override
     public synchronized void jvnUnLock() throws JvnException {
         switch (this.lockState){
@@ -113,17 +120,32 @@ public class JvnObjectImpl implements JvnObject {
         this.notify(); // notify that dev free lock to unlock invalidate routine
     }
 
+    /**
+     * Return jvnObj UID
+     * @return uid
+     * @throws JvnException
+     */
     @Override
     public int getUid() throws JvnException {
         return this.uid;
     }
 
+    /**
+     * Return the shared Obj
+     * @return the shared Obj
+     * @throws JvnException
+     */
     @Override
     public Serializable getSharedObject() throws JvnException {
         if(this.object != null) return this.object;
         return null;
     }
 
+    /**
+     * return the current state lock of the jvnObj
+     * @return current state lock
+     * @throws JvnException
+     */
     @Override
     public LockState getCurrentLockState() throws JvnException {
         return this.lockState;

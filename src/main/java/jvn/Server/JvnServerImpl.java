@@ -64,12 +64,24 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         }
     }
 
+    /**
+     * allow server to connect to rmi
+     * @throws RemoteException
+     * @throws NotBoundException
+     * @throws JvnException
+     */
     private void RmiConnect() throws RemoteException, NotBoundException, JvnException {
 
         this.registry = RmiConnection.RmiConnect(_Runnable.port, false);
         this.lookupCoord();
     }
 
+    /**
+     * loockup for coord instance via rmi
+     * @throws RemoteException
+     * @throws JvnException
+     * @throws NotBoundException
+     */
     private synchronized void lookupCoord() throws RemoteException, JvnException, NotBoundException {
         this.jvnCoord =
                 (JvnRemoteCoord) this.registry.lookup(
@@ -235,6 +247,12 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         this.updateCache();
         return this.jvnCoord.jvnLockRead(joi, this);
     }
+
+    /**
+     * Update server cache when coord crash
+     * @throws RemoteException
+     * @throws JvnException
+     */
     private synchronized void updateCache() throws RemoteException, JvnException {
         StringBuilder data = new StringBuilder();
         data.append("Update cache - remove lock \n");
@@ -310,10 +328,24 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         return this.interceptorList.get(joi).jvnInvalidateWriterForReader();
     }
 
+    /**
+     * return server UID
+     * @return uid
+     * @throws java.rmi.RemoteException
+     * @throws jvn.JvnException
+     */
     public Integer getUid() throws java.rmi.RemoteException, jvn.JvnException{
         return this.uid;
     }
 
+    /**
+     * Ensure that jvnObj are in cache, if not, get it from coord,
+     * and flush an jvnObj in cache if cache are full
+     * @param joi jvnObj uid to check
+     * @throws RemoteException
+     * @throws JvnException
+     * @throws NotBoundException
+     */
     private void ensureJoCached(Integer joi) throws RemoteException, JvnException, NotBoundException {
         if(this.interceptorList.get(joi) == null) this.jvnLookupObject(this.jvnCoord.getJvnObjectName(joi));
     }

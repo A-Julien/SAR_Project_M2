@@ -9,9 +9,7 @@ package irc;
 
 import jvn.JvnException;
 import jvn.Proxy.JvnProxy;
-import jvn.Server.JvnLocalServer;
 import jvn.Server.JvnServerImpl;
-import org.apache.logging.log4j.core.Appender;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,9 +18,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.Serializable;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 
 
+/**
+ * Quick and dirty app !
+ * Allow to run several shared object
+ */
 public class MultiApp extends JPanel implements Serializable{
     public String text = "";
     static JTabbedPane tabbedPane  = new JTabbedPane();

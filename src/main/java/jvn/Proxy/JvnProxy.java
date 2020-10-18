@@ -20,6 +20,12 @@ public class JvnProxy implements InvocationHandler {
         this.jvnObject= jvno;
     }
 
+    /**
+     * get server and add object
+     * @param obj
+     * @param name
+     * @return
+     */
     public static Object newInstance(Serializable obj, String name) {
         JvnObject jo = null;
         try {

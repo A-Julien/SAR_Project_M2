@@ -14,3 +14,22 @@
 
 La documentation des fonctions est disponnible dans la [javadoc](https://a-julien.github.io/SAR_Project_M2/apidocs/index.html)
 
+## Usage
+### Declare Read/Write methods by add annotations in an Interface
+
+```     
+        @JvnAnnotation(type="_W")
+        public void write(...);
+    
+        @JvnAnnotation(type ="_R")
+        public ... read();
+```
+### Share your object
+
+``` myObj obj = (myObj) JvnProxy.newInstance(new myObj(), "<NAMETOSHARE>"); ```
+
+### Use your object
+
+``` obj.read(); ```
+
+``` obj.write(...); ```

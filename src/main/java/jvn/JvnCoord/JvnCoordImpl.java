@@ -10,7 +10,6 @@
 package jvn.JvnCoord;
 
 import com.thoughtworks.xstream.XStream;
-import irc.Sentence;
 import irc.SentenceImpl;
 import jvn.App._Runnable;
 import jvn.JvnException;
@@ -98,6 +97,9 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         logger.info(this.printMap());
     }
 
+    /**
+     * Allow XStream to use class
+     */
     private void configureXStream(){
         Class<?>[] classes = new Class[] { JvnObjectImpl.class, JvnObject.class, SentenceImpl.class};
         xstream = new XStream();
@@ -145,6 +147,12 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         }
     }
 
+    /**
+     * Connect to RMI
+     *
+     * @throws RemoteException
+     * @throws NotBoundException
+     */
     private void RmiConnect() throws RemoteException, NotBoundException {
         this.registry = RmiConnection.RmiConnect(this.port, true);
         try {
@@ -427,6 +435,11 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     }
 
 
+    /**
+     * Allow app to run Coord
+     * @return
+     * @throws Exception
+     */
     @Override
     public int run() throws Exception {
         this.RmiConnect();
@@ -434,11 +447,24 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         return 0;
     }
 
+    /**
+     * Allow app to stop coord
+     * @throws IOException
+     * @throws NotBoundException
+     * @throws SQLException
+     * @throws InterruptedException
+     */
     @Override
     public void stop() throws IOException, NotBoundException, SQLException, InterruptedException {
         this.registry.unbind(this.buildRmiAddr(this.rmiName, _Runnable.address));
     }
 
+    /**
+     * Say Hello to a server
+     * @return
+     * @throws java.rmi.RemoteException
+     * @throws JvnException
+     */
     @Override
     public synchronized String sayHello()  throws java.rmi.RemoteException, JvnException{
         return "Coordinator say hello to server, i'm in live";
@@ -466,6 +492,11 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
     }
 
+    /**
+     * Write data to disk
+     * @param data data to write
+     * @param dataName file name
+     */
     private synchronized void writeFile(String data, String dataName){
         try {
             FileWriter myWriter = new FileWriter(pathSaveData.concat(dataName).concat(this.saveDataExtention));
@@ -478,6 +509,12 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         }
     }
 
+    /**
+     * load data from disk
+     * @param fileName file name
+     * @return
+     * @throws FileNotFoundException
+     */
     private String readFile(String fileName) throws FileNotFoundException {
         logger.info("Try to reading " + this.pathSaveData.concat(fileName));
         File myObj = new File(this.pathSaveData.concat(fileName).concat(this.saveDataExtention));
