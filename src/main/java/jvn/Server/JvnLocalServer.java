@@ -52,7 +52,7 @@ public interface JvnLocalServer extends Serializable {
      * @throws JvnException
      **/
     public JvnObject jvnLookupObject(String jon)
-            throws jvn.JvnException;
+            throws jvn.JvnException, RemoteException;
 
 
     /**
@@ -63,7 +63,7 @@ public interface JvnLocalServer extends Serializable {
      * @throws JvnException
      **/
     public Serializable jvnLockRead(int joi)
-            throws JvnException;
+            throws JvnException, RemoteException;
 
     /**
      * Get a Write lock on a JVN object
@@ -73,7 +73,7 @@ public interface JvnLocalServer extends Serializable {
      * @throws JvnException
      **/
     public Serializable jvnLockWrite(int joi)
-            throws JvnException;
+            throws JvnException, RemoteException;
 
 
     /**

@@ -15,6 +15,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.Serializable;
+import java.rmi.RemoteException;
 
 
 public class Irc implements Serializable{
@@ -107,7 +108,7 @@ public class Irc implements Serializable{
 		// display the read value
 		irc.data.setText(s);
 		irc.text.append(s+"\n");
-	   } catch (JvnException je) {
+	   } catch (JvnException | RemoteException je) {
 		   System.out.println("IRC problem : " + je.getMessage());
 	   }
 	}
@@ -139,7 +140,7 @@ public class Irc implements Serializable{
 		
 		// unlock the object
 		irc.sentence.jvnUnLock();
-	 } catch (JvnException je) {
+	 } catch (JvnException | RemoteException je) {
 		   System.out.println("IRC problem  : " + je.getMessage());
 	 }
 	}

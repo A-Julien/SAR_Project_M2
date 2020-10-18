@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.rmi.RemoteException;
 
 public class JvnObjectImpl implements JvnObject {
     private static final Logger logger = LogManager.getLogger(JvnProxy.class);
@@ -26,11 +27,12 @@ public class JvnObjectImpl implements JvnObject {
     }
 
     @Override
-    public synchronized void jvnLockRead() throws JvnException {
+    public synchronized void jvnLockRead() throws JvnException, RemoteException {
         logger.info("jvnLockRead state -> " + this.lockState);
         JvnLocalServer server= JvnServerImpl.jvnGetServer();
         switch (this.lockState){
             case NL:
+                assert server != null;
                 this.object = server.jvnLockRead(this.uid);
                 this.lockState = LockState.R;
                 break;
@@ -55,7 +57,7 @@ public class JvnObjectImpl implements JvnObject {
     }
 
     @Override
-    public synchronized void jvnLockWrite() throws JvnException {
+    public synchronized void jvnLockWrite() throws JvnException, RemoteException {
         logger.info("jvnLockWrite state -> " + this.lockState);
        JvnLocalServer server;
 

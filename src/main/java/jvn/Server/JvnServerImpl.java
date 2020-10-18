@@ -31,6 +31,7 @@ import java.util.Map;
 public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer, JvnRemoteServer {
     private static final Logger logger = LogManager.getLogger(JvnServerImpl.class);
 
+    private static final Integer cacheSize = 2;
 
     /**
      *
@@ -127,6 +128,41 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         this.jvnCoord.jvnRegisterObject(jvnObjectName, jvnObject,  this);
     }
 
+    private void reduceCache() throws JvnException, RemoteException {
+        Integer ifR = null;
+        Integer ifW = null;
+
+        for (Map.Entry<Integer, JvnObject> entry : this.interceptorList.entrySet()) {
+            switch(entry.getValue().getCurrentLockState()){
+                case NL:
+                    this.jvnCoord.deleteReduceServerCache(this.uid, entry.getKey(), false);
+                    this.interceptorList.remove(entry.getKey());
+                    return;
+                case R:
+                    if(ifR == null) ifR = entry.getKey();
+                    break;
+                case W:
+                    if(ifW == null && ifR == null) ifW = entry.getKey();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (ifR != null){
+            this.jvnCoord.deleteReduceServerCache(this.uid, ifR, false);
+            this.interceptorList.remove(ifR);
+            return;
+        }
+
+        if(ifW != null && ifR== null){
+            this.jvnCoord.deleteReduceServerCache(this.uid, ifW, true);
+            this.interceptorList.remove(ifW);
+        }
+
+    }
+
+
     /**
      * Provide the reference of a JVN object beeing given its symbolic name
      *
@@ -134,7 +170,9 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the JVN object
      * @throws JvnException
      **/
-    public synchronized JvnObject jvnLookupObject(String jvnObjectName) throws jvn.JvnException {
+    public synchronized JvnObject jvnLookupObject(String jvnObjectName) throws jvn.JvnException, RemoteException {
+        if(this.interceptorList.size() >= cacheSize) this.reduceCache();
+
         JvnObject findObject = null;
         try {
             findObject = this.jvnCoord.jvnLookupObject(jvnObjectName, this);
@@ -153,7 +191,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public synchronized Serializable jvnLockRead(int joi) throws JvnException {
+    public synchronized Serializable jvnLockRead(int joi) throws JvnException, RemoteException {
+        this.ensureJoCached(joi);
         try {
             return jvnCoord.jvnLockRead(joi, this);
         } catch (RemoteException e) {
@@ -168,7 +207,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public synchronized Serializable jvnLockWrite(int joi) throws JvnException {
+    public synchronized Serializable jvnLockWrite(int joi) throws JvnException, RemoteException {
+        this.ensureJoCached(joi);
         try {
             return jvnCoord.jvnLockWrite(joi, this);
         } catch (RemoteException e) {
@@ -187,6 +227,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      **/
     public synchronized void jvnInvalidateReader(int joi) throws java.rmi.RemoteException, jvn.JvnException {
         logger.info("jvnInvalidateReader  joi : " + joi);
+        this.ensureJoCached(joi);
         this.interceptorList.get(joi).jvnInvalidateReader();
     }
 
@@ -200,6 +241,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws java.rmi.RemoteException,JvnException
      **/
     public synchronized Serializable jvnInvalidateWriter(int joi) throws java.rmi.RemoteException, jvn.JvnException {
+        this.ensureJoCached(joi);
         return this.interceptorList.get(joi).jvnInvalidateWriter();
     }
 
@@ -213,11 +255,16 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws java.rmi.RemoteException,JvnException
      **/
     public synchronized Serializable jvnInvalidateWriterForReader(int joi) throws java.rmi.RemoteException, jvn.JvnException {
+        this.ensureJoCached(joi);
         return this.interceptorList.get(joi).jvnInvalidateWriterForReader();
     }
 
     public Integer getUid() throws java.rmi.RemoteException, jvn.JvnException{
         return this.uid;
+    }
+
+    private void ensureJoCached(Integer joi) throws RemoteException, JvnException {
+        if(this.interceptorList.get(joi) == null) this.jvnLookupObject(this.jvnCoord.getJvnObjectName(joi));
     }
 }
 

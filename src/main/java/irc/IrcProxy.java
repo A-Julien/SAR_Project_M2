@@ -28,9 +28,10 @@ public class IrcProxy implements Serializable{
      **/
     public static void main(String argv[]) {
         try {
-            Sentence jo = (Sentence) JvnProxy.newInstance(new SentenceImpl(), "IRC");
+            Sentence jo0 = (Sentence) JvnProxy.newInstance(new SentenceImpl(), "IRC0");
+
             // create the graphical part of the Chat application
-            new IrcProxy(jo);
+            new IrcProxy(jo0);
 
         } catch (Exception e) {
             System.out.println("IRC problem : " + e.getMessage());
