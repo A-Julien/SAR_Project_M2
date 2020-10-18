@@ -7,7 +7,10 @@
 
 package irc;
 
+import jvn.JvnException;
 import jvn.Proxy.JvnProxy;
+import jvn.Server.JvnLocalServer;
+import jvn.Server.JvnServerImpl;
 import org.apache.logging.log4j.core.Appender;
 
 import javax.swing.*;
@@ -16,12 +19,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.Serializable;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
 
 
 public class MultiApp extends JPanel implements Serializable{
-    public Label data;
     public String text = "";
-    Sentence sentence;
+    static JTabbedPane tabbedPane  = new JTabbedPane();
 
     /**
      * main method
@@ -29,83 +33,71 @@ public class MultiApp extends JPanel implements Serializable{
      **/
     public static void main(String argv[]) {
         try {
-            Sentence jo0 = (Sentence) JvnProxy.newInstance(new SentenceImpl(), "IRC0");
-
-            // create the graphical part of the Chat application
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    //Turn off metal's use of bold fonts
-                    UIManager.put("swing.boldMetal", Boolean.FALSE);
-                    createAndShowGUI(jo0);
-                }
-            });
+            createAndShowGUI();
         } catch (Exception e) {
             System.out.println("IRC problem : " + e.getMessage());
         }
     }
 
-    public void stressIrc(Sentence jo){
-        this.sentence.write("test");
-        jo.read();
-    }
 
     /**
      * IRC Constructor
      @param jo the JVN object representing the Chat
      **/
-    public MultiApp(Sentence jo) {
+    public MultiApp() {
         super(new GridLayout(1, 1));
 
-        sentence = jo;
+        Button add = new Button("+");
+        TextField data=new TextField(40);
+        JToolBar addt = new JToolBar();
 
-        /*frame=new Frame();
-        frame.setLayout(new GridLayout(1,1));
-        text=new TextArea(10,60);
-        text.setEditable(false);
-        text.setForeground(Color.red);
-        frame.add(text);
-        data=new TextField(40);
-        frame.add(data);
-        Button read_button = new Button("read");
-        read_button.addActionListener(new ReadListenerMultiApp(this));
-        frame.add(read_button);
-        Button write_button = new Button("write");
-        write_button.addActionListener(new WriteListenerMultiApp(this));
-        frame.add(write_button);
-        frame.setSize(545,201);
-        text.setBackground(Color.black);
-        frame.setVisible(true);*/
 
-        JTabbedPane tabbedPane = new JTabbedPane();
 
-        JComponent panel1 = makeTextPanel("Panel #1");
-        tabbedPane.addTab("Tab 1", null, panel1,"Does nothing");
+        addt.setLayout(new GridLayout(1, 1));
+        add.addActionListener(e ->
+            tabbedPane.addTab(data.getText(), null, createFrame(
+                    new coolClass(data.getText())
+                )
+            )
+        );
+        addt.add(data);
+        addt.add(add);
+        //add(addt,BorderLayout.NORTH);
+        tabbedPane.addTab("irc", null, createFrame(
+                new coolClass("irc")
+        ));
         tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
-        tabbedPane.setMnemonicAt(3, KeyEvent.VK_4);
-        add(tabbedPane);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, addt, tabbedPane);
+        //splitPane.setOneTouchExpandable(true);
+        splitPane.setDividerLocation(50);
+        add(splitPane);
+        //Add content to the window.
+
     }
 
-    private Frame createFrame(){
-        Sentence jo0 = (Sentence) JvnProxy.newInstance(new SentenceImpl(), "IRC0");
-        Frame frame=new Frame();
-        frame.setLayout(new GridLayout(1,1));
-        TextArea text=new TextArea(10,60);
-        text.setEditable(false);
-        text.setForeground(Color.red);
-        frame.add(text);
-        TextField data=new TextField(40);
-        frame.add(data);
+    private JPanel createFrame(coolClass s) {
+
+        JPanel panel = new JPanel(false);
+
+        TextArea textt=new TextArea(10,60);
+        textt.setEditable(false);
+        textt.setForeground(Color.red);
+        panel.add(textt);
+        TextField dataa=new TextField(40);
+        panel.add(dataa);
         Button read_button = new Button("read");
-        read_button.addActionListener(new ReadListenerMultiApp(this));
-        frame.add(read_button);
+        s.text = textt;
+        s.data = dataa;
+        read_button.addActionListener(new ReadListenerMultiApp(s));
+        panel.add(read_button);
         Button write_button = new Button("write");
-        write_button.addActionListener(new WriteListenerMultiApp(this));
-        frame.add(write_button);
-        frame.setSize(545,201);
-        text.setBackground(Color.black);
-        frame.setVisible(true);
-        return frame;
+        write_button.addActionListener(new WriteListenerMultiApp(s));
+        panel.add(write_button);
+        panel.setSize(545,201);
+        textt.setBackground(Color.black);
+
+        return panel;
     }
     protected JComponent makeTextPanel(String text) {
         JPanel panel = new JPanel(false);
@@ -117,13 +109,15 @@ public class MultiApp extends JPanel implements Serializable{
     }
 
 
-    private static void createAndShowGUI(Sentence ss) {
+    private static void createAndShowGUI() throws RemoteException, JvnException {
         //Create and set up the window.
-        JFrame frame = new JFrame("TabbedPaneDemo");
+        JvnServerImpl js = JvnServerImpl.jvnGetServer();
+        JFrame frame = new JFrame("Server id <" + js.getUid() +">");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        //Add content to the window.
-        frame.add(new MultiApp(ss), BorderLayout.CENTER);
+
+
+        frame.add(new MultiApp(), BorderLayout.CENTER);
 
         //Display the window.
         frame.pack();
@@ -132,14 +126,25 @@ public class MultiApp extends JPanel implements Serializable{
 }
 
 
+class coolClass implements Serializable {
+   public Sentence sentence;
+   public TextField data;
+   public TextArea text;
+
+    public coolClass(String s){
+        this.sentence = (Sentence) JvnProxy.newInstance(new SentenceImpl(), s);
+    }
+
+}
+
 
 /**
  * Internal class to manage user events (read) on the CHAT application
  **/
 class ReadListenerMultiApp implements ActionListener {
-    MultiApp irc;
+    coolClass irc;
 
-    public ReadListenerMultiApp (MultiApp i) {
+    public ReadListenerMultiApp (coolClass i) {
         irc = i;
     }
 
@@ -153,7 +158,7 @@ class ReadListenerMultiApp implements ActionListener {
 
             // display the read value
             irc.data.setText(s);
-           // irc.text.append(s+"\n");
+            irc.text.append(s+"\n");
 
         } catch (Exception err) {
             System.out.println("IRC problem : " + err.getMessage());
@@ -165,9 +170,9 @@ class ReadListenerMultiApp implements ActionListener {
  * Internal class to manage user events (write) on the CHAT application
  **/
 class WriteListenerMultiApp implements ActionListener {
-    MultiApp irc;
+    coolClass irc;
 
-    public WriteListenerMultiApp (MultiApp i) {
+    public WriteListenerMultiApp (coolClass i) {
         irc = i;
     }
 

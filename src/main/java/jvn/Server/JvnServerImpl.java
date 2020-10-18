@@ -16,10 +16,12 @@ import jvn.RmiServices.ConfigManager;
 import jvn.RmiServices.RmiConnection;
 import jvn.jvnOject.JvnObject;
 import jvn.jvnOject.JvnObjectImpl;
+import jvn.jvnOject.LockState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -65,7 +67,10 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
     private void RmiConnect() throws RemoteException, NotBoundException, JvnException {
 
         this.registry = RmiConnection.RmiConnect(_Runnable.port, false);
+        this.lookupCoord();
+    }
 
+    private synchronized void lookupCoord() throws RemoteException, JvnException, NotBoundException {
         this.jvnCoord =
                 (JvnRemoteCoord) this.registry.lookup(
                         ConfigManager.buildRmiAddr(JvnRemoteCoord.rmiName, _Runnable.address, _Runnable.port));
@@ -132,37 +137,50 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @throws JvnException
      * @throws RemoteException
      */
-    private void reduceCache() throws JvnException, RemoteException {
+    private synchronized void reduceCache() throws JvnException, RemoteException {
+        logger.warn("Reduce cache ..");
         Integer ifR = null;
         Integer ifW = null;
 
         for (Map.Entry<Integer, JvnObject> entry : this.interceptorList.entrySet()) {
             switch(entry.getValue().getCurrentLockState()){
                 case NL:
-                    this.jvnCoord.deleteReduceServerCache(this.uid, entry.getKey(), false);
-                    this.interceptorList.remove(entry.getKey());
+                    this.jvnCoord.ReduceServerCache(this.uid, entry.getKey(), false);
+                    logger.info("remove object : " +  this.interceptorList.remove(entry.getKey()).getUid() + " in NL");
                     return;
+
+                case RC:
                 case R:
                     if(ifR == null) ifR = entry.getKey();
                     break;
+
+                case WC:
                 case W:
                     if(ifW == null && ifR == null) ifW = entry.getKey();
                     break;
+
                 default:
                     break;
             }
         }
 
         if (ifR != null){
-            this.jvnCoord.deleteReduceServerCache(this.uid, ifR, false);
-            this.interceptorList.remove(ifR);
+
+            this.jvnCoord.ReduceServerCache(this.uid, ifR, false);
+            logger.info("remove object : " + this.interceptorList.remove(ifR).getUid() + " in read");
+
             return;
         }
 
-        if(ifW != null && ifR== null){
-            this.jvnCoord.deleteReduceServerCache(this.uid, ifW, true);
-            this.interceptorList.remove(ifW);
+        if(ifW != null){
+
+            this.jvnCoord.ReduceServerCache(this.uid, ifW, true);
+            logger.info("remove object : " + this.interceptorList.remove(ifW).getUid() + " in write");
+
+            return;
         }
+
+        logger.error("Hum.. application may crash soon :'(");
 
     }
 
@@ -174,18 +192,25 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the JVN object
      * @throws JvnException
      **/
-    public synchronized JvnObject jvnLookupObject(String jvnObjectName) throws jvn.JvnException, RemoteException {
+    public synchronized JvnObject jvnLookupObject(String jvnObjectName) throws jvn.JvnException, RemoteException, NotBoundException {
         if(this.interceptorList.size() >= cacheSize) this.reduceCache();
 
         JvnObject findObject = null;
         try {
             findObject = this.jvnCoord.jvnLookupObject(jvnObjectName, this);
-        } catch (RemoteException e) {
-            e.printStackTrace();
+        } catch (ConnectException e){
+            logger.error("Server disconnect, try to reconnect");
+            this.lookupCoord();
+            this.updateCache();
+            findObject = this.jvnCoord.jvnLookupObject(jvnObjectName, this);
         }
         if (findObject != null) this.interceptorList.put(findObject.getUid(), findObject);
 
         return findObject;
+    }
+
+    public synchronized  void updateObjData(Integer uid, Serializable data){
+        //this.jvnCoord.updateObjData( uid,  data);
     }
 
     /**
@@ -195,13 +220,31 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public synchronized Serializable jvnLockRead(int joi) throws JvnException, RemoteException {
+    public synchronized Serializable jvnLockRead(int joi) throws JvnException, RemoteException, NotBoundException {
         this.ensureJoCached(joi);
+
         try {
-            return jvnCoord.jvnLockRead(joi, this);
+            return this.jvnCoord.jvnLockRead(joi, this);
+        } catch (ConnectException e){
+            logger.error("Server disconnect, try to reconnect");
         } catch (RemoteException e) {
             throw new JvnException("Error when lock read : " + e.getMessage());
         }
+
+        this.lookupCoord();
+        this.updateCache();
+        return this.jvnCoord.jvnLockRead(joi, this);
+    }
+    private synchronized void updateCache() throws RemoteException, JvnException {
+        StringBuilder data = new StringBuilder();
+        data.append("Update cache - remove lock \n");
+        for(Map.Entry<Integer, JvnObject> entry : this.interceptorList.entrySet()){
+            data.append("update cached object ").append(entry.getKey());
+            this.interceptorList.put(entry.getKey(),this.jvnCoord.jvnLookupObject(this.jvnCoord.getJvnObjectName(entry.getKey()),this));
+            this.interceptorList.get(entry.getKey()).setCurrentLockState(LockState.NL); // remove lock
+        }
+        logger.warn(data.toString());
+
     }
 
     /**
@@ -211,9 +254,14 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws JvnException
      **/
-    public synchronized Serializable jvnLockWrite(int joi) throws JvnException, RemoteException {
+    public synchronized Serializable jvnLockWrite(int joi) throws JvnException, RemoteException, NotBoundException {
         this.ensureJoCached(joi);
         try {
+            return jvnCoord.jvnLockWrite(joi, this);
+        } catch (ConnectException e){
+            logger.error("Server disconnect, try to reconnect");
+            this.lookupCoord();
+            this.updateCache();
             return jvnCoord.jvnLockWrite(joi, this);
         } catch (RemoteException e) {
             throw new JvnException("Error when lock write : " + e.getMessage());
@@ -229,7 +277,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return void
      * @throws java.rmi.RemoteException,JvnException
      **/
-    public synchronized void jvnInvalidateReader(int joi) throws java.rmi.RemoteException, jvn.JvnException {
+    public synchronized void jvnInvalidateReader(int joi) throws java.rmi.RemoteException, jvn.JvnException, NotBoundException {
         logger.info("jvnInvalidateReader  joi : " + joi);
         this.ensureJoCached(joi);
         this.interceptorList.get(joi).jvnInvalidateReader();
@@ -243,7 +291,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws java.rmi.RemoteException,JvnException
      **/
-    public synchronized Serializable jvnInvalidateWriter(int joi) throws java.rmi.RemoteException, jvn.JvnException {
+    public synchronized Serializable jvnInvalidateWriter(int joi) throws java.rmi.RemoteException, jvn.JvnException, NotBoundException {
         this.ensureJoCached(joi);
         return this.interceptorList.get(joi).jvnInvalidateWriter();
     }
@@ -257,7 +305,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      * @return the current JVN object state
      * @throws java.rmi.RemoteException,JvnException
      **/
-    public synchronized Serializable jvnInvalidateWriterForReader(int joi) throws java.rmi.RemoteException, jvn.JvnException {
+    public synchronized Serializable jvnInvalidateWriterForReader(int joi) throws java.rmi.RemoteException, jvn.JvnException, NotBoundException {
         this.ensureJoCached(joi);
         return this.interceptorList.get(joi).jvnInvalidateWriterForReader();
     }
@@ -266,7 +314,7 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         return this.uid;
     }
 
-    private void ensureJoCached(Integer joi) throws RemoteException, JvnException {
+    private void ensureJoCached(Integer joi) throws RemoteException, JvnException, NotBoundException {
         if(this.interceptorList.get(joi) == null) this.jvnLookupObject(this.jvnCoord.getJvnObjectName(joi));
     }
 }

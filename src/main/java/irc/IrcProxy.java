@@ -21,7 +21,6 @@ public class IrcProxy implements Serializable{
     Frame 			frame;
     Sentence sentence;
 
-
     /**
      * main method
      * create a JVN object nammed IRC for representing the Chat application

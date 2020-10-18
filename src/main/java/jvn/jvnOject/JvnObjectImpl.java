@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
 public class JvnObjectImpl implements JvnObject {
@@ -38,7 +39,7 @@ public class JvnObjectImpl implements JvnObject {
      * @throws RemoteException
      */
     @Override
-    public synchronized void jvnLockRead() throws JvnException, RemoteException {
+    public synchronized void jvnLockRead() throws JvnException, RemoteException, NotBoundException {
         logger.info("jvnLockRead state -> " + this.lockState);
         JvnLocalServer server= JvnServerImpl.jvnGetServer();
         switch (this.lockState){
@@ -73,11 +74,12 @@ public class JvnObjectImpl implements JvnObject {
      * @throws RemoteException
      */
     @Override
-    public synchronized void jvnLockWrite() throws JvnException, RemoteException {
+    public synchronized void jvnLockWrite() throws JvnException, RemoteException, NotBoundException {
         logger.info("jvnLockWrite state -> " + this.lockState);
        JvnLocalServer server;
 
         switch (this.lockState){
+            case R:
             case RC:
             case NL:
                 server = JvnServerImpl.jvnGetServer();
@@ -171,6 +173,7 @@ public class JvnObjectImpl implements JvnObject {
         logger.info("jvnInvalidateWriter " + this.lockState);
         switch (this.lockState){
             case WC:
+            case NL:
                 this.lockState = LockState.NL;
                 break;
             case W:

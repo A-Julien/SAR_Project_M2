@@ -9,10 +9,4 @@ public enum LockState implements Serializable {
     WC,
     RWC,
     NL
-
-    /*public LockState getState(LockState newLockState, LockState oldLockState){
-        switch (oldLockState){
-            case R
-        }
-    }*/
 }

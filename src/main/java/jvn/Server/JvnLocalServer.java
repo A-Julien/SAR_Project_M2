@@ -14,6 +14,7 @@ import jvn.JvnException;
 import jvn.jvnOject.JvnObject;
 
 import java.io.Serializable;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
 /**
@@ -52,7 +53,7 @@ public interface JvnLocalServer extends Serializable {
      * @throws JvnException
      **/
     public JvnObject jvnLookupObject(String jon)
-            throws jvn.JvnException, RemoteException;
+            throws jvn.JvnException, RemoteException, NotBoundException;
 
 
     /**
@@ -63,7 +64,7 @@ public interface JvnLocalServer extends Serializable {
      * @throws JvnException
      **/
     public Serializable jvnLockRead(int joi)
-            throws JvnException, RemoteException;
+            throws JvnException, RemoteException, NotBoundException;
 
     /**
      * Get a Write lock on a JVN object
@@ -73,7 +74,7 @@ public interface JvnLocalServer extends Serializable {
      * @throws JvnException
      **/
     public Serializable jvnLockWrite(int joi)
-            throws JvnException, RemoteException;
+            throws JvnException, RemoteException, NotBoundException;
 
 
     /**
@@ -83,6 +84,8 @@ public interface JvnLocalServer extends Serializable {
      **/
     public void jvnTerminate()
             throws jvn.JvnException;
+
+    public void updateObjData(Integer uid, Serializable data) throws RemoteException, JvnException;
 }
 
  

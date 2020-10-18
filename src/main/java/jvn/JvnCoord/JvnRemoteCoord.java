@@ -91,9 +91,11 @@ public interface JvnRemoteCoord extends Remote {
 
     public String sayHello() throws RemoteException, JvnException;
 
-    public void deleteReduceServerCache(Integer serverUid, Integer jvnObjectUid, boolean lockWrite) throws RemoteException, JvnException;
+    public void ReduceServerCache(Integer serverUid, Integer jvnObjectUid, boolean lockWrite) throws RemoteException, JvnException;
 
     public String getJvnObjectName(Integer jvnObjectUid) throws RemoteException, JvnException;
+
+    public void updateObjData(Integer uid, Serializable data) throws RemoteException, JvnException;
 
     }
 

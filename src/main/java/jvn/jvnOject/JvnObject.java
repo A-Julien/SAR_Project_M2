@@ -10,6 +10,7 @@ package jvn.jvnOject;
 import jvn.JvnException;
 
 import java.io.Serializable;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
 /**
@@ -27,7 +28,7 @@ public interface JvnObject extends Serializable {
      * @throws JvnException
      **/
     public void jvnLockRead()
-            throws jvn.JvnException, RemoteException;
+            throws jvn.JvnException, RemoteException, NotBoundException;
 
     public void updateSharedObject(Serializable object);
 
@@ -37,7 +38,7 @@ public interface JvnObject extends Serializable {
      * @throws JvnException
      **/
     public void jvnLockWrite()
-            throws jvn.JvnException, RemoteException;
+            throws jvn.JvnException, RemoteException, NotBoundException;
 
     /**
      * Unlock  the object

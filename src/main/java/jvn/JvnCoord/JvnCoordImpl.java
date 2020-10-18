@@ -10,12 +10,15 @@
 package jvn.JvnCoord;
 
 import com.thoughtworks.xstream.XStream;
+import irc.Sentence;
+import irc.SentenceImpl;
 import jvn.App._Runnable;
 import jvn.JvnException;
 import jvn.RmiServices.ConfigManager;
 import jvn.RmiServices.RmiConnection;
 import jvn.Server.JvnRemoteServer;
 import jvn.jvnOject.JvnObject;
+import jvn.jvnOject.JvnObjectImpl;
 import jvn.jvnOject.LockState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,16 +93,23 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     public JvnCoordImpl(String adresse, int port) throws Exception {
         this.adresse = adresse;
         this.port = port;
-        this.xstream = new XStream();
+        this.configureXStream();
         this.restoredata();
         logger.info(this.printMap());
+    }
+
+    private void configureXStream(){
+        Class<?>[] classes = new Class[] { JvnObjectImpl.class, JvnObject.class, SentenceImpl.class};
+        xstream = new XStream();
+        XStream.setupDefaultSecurity(xstream);
+        xstream.allowTypes(classes);
     }
 
     /**
      * Load all datas from save files if they exists, allocate new hasmap for otherwise
      */
     private void restoredata(){
-        try {
+       /* try {
             this.uidToJvnRemoteServer = (Map<Integer, JvnRemoteServer>) this.xstream.fromXML(this.readFile(this.uidToJvnRemoteServer_fileName));
         } catch (FileNotFoundException e) {
             logger.warn("Can not found " + this.uidToJvnRemoteServer_fileName + " create new map");
@@ -116,9 +126,13 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         } catch (FileNotFoundException e) {
             logger.warn("Can not found " + this.jvnObjectUidToLock_fileName + " create new map");
             this.jvnObjectUidToLock = new HashMap<>();
-        }
+        }*/
+        this.uidToJvnRemoteServer = new HashMap<>();
+        this.serverUidToJvnObjectName = new HashMap<>();
+        this.jvnObjectUidToLock = new HashMap<>();
         try {
             this.jvnObjectNameToUid = (Map<String, Integer>) this.xstream.fromXML(this.readFile(this.jvnObjectNameToUid_fileName));
+            for (Integer entry : this.jvnObjectNameToUid.values()) this.jvnObjectUidToLock.put(entry, new HashMap<>());
         } catch (FileNotFoundException e) {
             logger.warn("Can not found " + this.jvnObjectNameToUid_fileName + " create new map");
             this.jvnObjectNameToUid = new HashMap<>();
@@ -173,17 +187,25 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     @Override
     public synchronized void jvnRegisterObject(String jvnObjectName, JvnObject jvnObject, JvnRemoteServer jvnRemoteServer)
             throws RemoteException, JvnException {
+        logger.info("Server <" + jvnRemoteServer.getUid() +"> want register object <" + jvnObjectName + ">");
 
+        if(this.jvnObjectNameToJvnObject.containsKey(jvnObjectName)){
+            logger.error("object <" + jvnObjectName + "> already exist");
+            return;
+        }
+
+        // add server if not exist
         if(!this.uidToJvnRemoteServer.containsKey(jvnRemoteServer.getUid())){
             this.uidToJvnRemoteServer.put(jvnRemoteServer.getUid(), jvnRemoteServer);
 
             this.serverUidToJvnObjectName.put(jvnRemoteServer.getUid(), new ArrayList<>());
             this.serverUidToJvnObjectName.get(jvnRemoteServer.getUid()).add(jvnObjectName);
-
-
-            this.jvnObjectNameToJvnObject.put(jvnObjectName, jvnObject);
         }
 
+        //add object
+        this.jvnObjectNameToJvnObject.put(jvnObjectName, jvnObject);
+
+        //add jvnobjname to id
         this.jvnObjectNameToUid.put(jvnObjectName,jvnObject.getUid());
 
         this.jvnObjectUidToLock.put(jvnObject.getUid(), new HashMap<>());
@@ -205,11 +227,12 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     /**
      * Write the changes in datas to save them.
      */
-    private void saveAllData(){
-        this.writeFile(xstream.toXML(this.uidToJvnRemoteServer), this.uidToJvnRemoteServer_fileName);
+    private synchronized void saveAllData(){
+        /*this.writeFile(xstream.toXML(this.uidToJvnRemoteServer), this.uidToJvnRemoteServer_fileName);
         this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);
+        this.writeFile(xstream.toXML(this.jvnObjectUidToLock), this.jvnObjectUidToLock_fileName);*/
+
         this.writeFile(xstream.toXML(this.jvnObjectNameToJvnObject), this.jvnObjectNameToJvnObject_fileName);
-        this.writeFile(xstream.toXML(this.jvnObjectUidToLock), this.jvnObjectUidToLock_fileName);
         this.writeFile(xstream.toXML(this.jvnObjectNameToUid), this.jvnObjectNameToUid_fileName);
     }
 
@@ -222,10 +245,15 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      **/
     public synchronized JvnObject jvnLookupObject(String jvnObjectName, JvnRemoteServer jvnRemoteServer)
             throws java.rmi.RemoteException, jvn.JvnException {
+        logger.info("Server <" + jvnRemoteServer.getUid() +"> lookup for object  <" + jvnObjectName + ">");
 
-        if(!this.jvnObjectNameToJvnObject.containsKey(jvnObjectName)) return null;
+        if(!this.jvnObjectNameToJvnObject.containsKey(jvnObjectName)) {
+            logger.warn("Object <" + jvnObjectName + "> not register");
+            return null;
+        }
 
         if(!this.serverUidToJvnObjectName.containsKey(jvnRemoteServer.getUid())){
+            logger.info("adding server <" +jvnRemoteServer.getUid() + "> to database" );
             this.serverUidToJvnObjectName.put(jvnRemoteServer.getUid(), new ArrayList<>());
             this.uidToJvnRemoteServer.put(jvnRemoteServer.getUid(), jvnRemoteServer);
         }
@@ -235,12 +263,13 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         }
         this.jvnObjectNameToJvnObject.get(jvnObjectName).setCurrentLockState(LockState.NL);
 
-        this.writeFile(xstream.toXML(this.uidToJvnRemoteServer), this.uidToJvnRemoteServer_fileName);
+        /*this.writeFile(xstream.toXML(this.uidToJvnRemoteServer), this.uidToJvnRemoteServer_fileName);
         this.writeFile(xstream.toXML(this.jvnObjectNameToJvnObject), this.jvnObjectNameToJvnObject_fileName);
-        this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);
+        this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);*/
+        this.saveAllData();
 
+        logger.info("Return object " + jvnObjectName + " from database");
         return this.jvnObjectNameToJvnObject.get(jvnObjectName);
-
     }
 
     /**
@@ -255,18 +284,20 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
             throws java.rmi.RemoteException, JvnException {
         logger.info("server " + jvnRemoteServer.getUid() + " want ReadLock on " + jvnObjectUid);
 
-
-        if(!this.jvnObjectUidToLock.containsKey(jvnObjectUid))
-            throw new JvnException("Error, object uid : " + jvnObjectUid + " not found");
+        if(!this.jvnObjectUidToLock.containsKey(jvnObjectUid)){
+            throw new JvnException("Error, object uid : " + jvnObjectUid + " not found - status : " + this.printMap());
+        }
 
         //case no lock on jvnObjectUid
         if(this.jvnObjectUidToLock.get(jvnObjectUid).isEmpty()){
+            logger.info("no lock on object " + jvnObjectUid);
             String name = this.getJvnObjectName(jvnObjectUid);
 
             if (name == null) throw new JvnException("Error, object uid : " + jvnObjectUid + " not found");
 
             this.jvnObjectUidToLock.get(jvnObjectUid).put(jvnRemoteServer.getUid(), LockState.R);
-            this.writeFile(xstream.toXML(this.jvnObjectUidToLock), this.jvnObjectUidToLock_fileName);
+            //this.writeFile(xstream.toXML(this.jvnObjectUidToLock), this.jvnObjectUidToLock_fileName);
+            logger.info("getlock" + this.printMap());
             return this.jvnObjectNameToJvnObject.get(name).getSharedObject();
         }
 
@@ -277,7 +308,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
                 try {
                     newObject = this.uidToJvnRemoteServer.get(entry.getKey()).jvnInvalidateWriterForReader(jvnObjectUid);
                     this.jvnObjectUidToLock.get(jvnObjectUid).replace(entry.getKey(), LockState.R);
-                }catch (RemoteException e){
+                }catch (RemoteException | NotBoundException e){
                     logger.warn("Server uid " + entry.getKey() + " disconnect");
                     this.jvnTerminate(entry.getKey());
                     newObject = this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid));
@@ -321,6 +352,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      public synchronized Serializable jvnLockWrite(int jvnObjectUid, JvnRemoteServer jvnRemoteServer)
             throws java.rmi.RemoteException, JvnException {
          logger.info("server " + jvnRemoteServer.getUid() + " want writeLock on " + jvnObjectUid);
+         logger.info(this.printMap());
 
         if(!this.jvnObjectUidToLock.containsKey(jvnObjectUid)) //TODO INSURE
             throw new JvnException("Error, object uid : " + jvnObjectUid + " not found");
@@ -332,7 +364,8 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
             if (name == null) throw new JvnException("Error, object uid : " + jvnObjectUid + " not found");
 
             this.jvnObjectUidToLock.get(jvnObjectUid).put(jvnRemoteServer.getUid(), LockState.W);
-            this.writeFile(xstream.toXML(this.jvnObjectUidToLock), this.jvnObjectUidToLock_fileName);
+            //this.writeFile(xstream.toXML(this.jvnObjectUidToLock), this.jvnObjectUidToLock_fileName);
+
             return this.jvnObjectNameToJvnObject.get(name);
         }
 
@@ -344,7 +377,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
                         try {
                             this.uidToJvnRemoteServer.get(entry.getKey()).jvnInvalidateReader(jvnObjectUid);
                             toRemove.add(entry.getKey());
-                        } catch (RemoteException e) {
+                        } catch (RemoteException | NotBoundException e) {
                             logger.warn("Server uid " + entry.getKey() + " disconnect");
                             this.jvnTerminate(entry.getKey());
                         }
@@ -355,7 +388,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
                             Serializable newObject = this.uidToJvnRemoteServer.get(entry.getKey()).jvnInvalidateWriter(jvnObjectUid);
                             toRemove.add(entry.getKey());
                             this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).updateSharedObject(newObject);
-                        } catch (RemoteException e){
+                        } catch (RemoteException | NotBoundException e){
                             logger.warn("Server uid " + entry.getKey() + " disconnect");
                             this.jvnTerminate(entry.getKey());
                         }
@@ -372,6 +405,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         this.jvnObjectUidToLock.get(jvnObjectUid).remove(jvnRemoteServer.getUid());
 
         this.jvnObjectUidToLock.get(jvnObjectUid).put(jvnRemoteServer.getUid(), LockState.W);
+
         this.saveAllData();
         return this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).getSharedObject();
     }
@@ -388,8 +422,8 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         for ( Integer objUid : this.jvnObjectUidToLock.keySet() ) jvnObjectUidToLock.get(objUid).remove(jsUid);
         this.serverUidToJvnObjectName.remove(jsUid);
 
-        this.writeFile(xstream.toXML(this.uidToJvnRemoteServer), this.uidToJvnRemoteServer_fileName);
-        this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);
+        /*this.writeFile(xstream.toXML(this.uidToJvnRemoteServer), this.uidToJvnRemoteServer_fileName);
+        this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);*/
     }
 
 
@@ -419,16 +453,16 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      * @throws JvnException
      */
     @Override
-    public synchronized void deleteReduceServerCache(Integer serverUid, Integer jvnObjectUid, boolean lockWrite) throws RemoteException, JvnException {
+    public synchronized void ReduceServerCache(Integer serverUid, Integer jvnObjectUid, boolean lockWrite) throws RemoteException, JvnException {
         if (lockWrite){
             Serializable newObject = this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).jvnInvalidateWriter();
             this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).updateSharedObject(newObject);
-            this.writeFile(xstream.toXML(this.jvnObjectNameToJvnObject), this.jvnObjectNameToJvnObject_fileName);
+            //this.writeFile(xstream.toXML(this.jvnObjectNameToJvnObject), this.jvnObjectNameToJvnObject_fileName);
         }
         this.serverUidToJvnObjectName.get(serverUid).remove(this.getJvnObjectName(jvnObjectUid));
 
-        this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);
-
+        //this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);
+        this.saveAllData();
 
     }
 
@@ -461,15 +495,27 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
      * Print datas of the JvnCoordinator.
      * @return
      */
-    private String printMap() {
+    private synchronized String printMap() {
         StringBuilder data = new StringBuilder();
         data.append("\n");
+        data.append("Object in memory :").append("\n");
+        for (Map.Entry<String,JvnObject> entry :this.jvnObjectNameToJvnObject.entrySet()) {
+            data.append("\t* ").append(entry.getKey()).append(" - id <").append(
+                    this.jvnObjectNameToUid.get(entry.getKey())
+            ).append(">\n");
+        }
+        data.append("Server lock Status : ").append("\n");
         for(Map.Entry<Integer, Map<Integer, LockState>> entry : this.jvnObjectUidToLock.entrySet()){
-            data.append("Objet d'id : ").append(entry.getKey()).append("\n");
+            data.append("\t* Objet id : ").append(entry.getKey()).append(" - <" + this.getJvnObjectName(entry.getKey())).append(">\n");
             for(Map.Entry<Integer, LockState> entry2 : entry.getValue().entrySet()){
-                data.append("\tServer d'id : ").append(entry2.getKey()).append(" Lockstate : ").append(entry2.getValue()).append("\n");
+                data.append("\t\t- Server ").append(entry2.getKey()).append(" -> ").append(entry2.getValue()).append("\n");
                 }
         }
         return data.toString();
     }
+
+    public synchronized void updateObjData(Integer uid, Serializable data) throws RemoteException, JvnException{
+        this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(uid)).updateSharedObject(data);
+    }
+
 }

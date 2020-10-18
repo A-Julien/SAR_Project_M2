@@ -13,6 +13,7 @@ package jvn.Server;
 import jvn.JvnException;
 
 import java.io.Serializable;
+import java.rmi.NotBoundException;
 import java.rmi.Remote;
 
 
@@ -29,7 +30,7 @@ public interface JvnRemoteServer extends Remote {
      * @throws java.rmi.RemoteException,JvnException
      **/
     public void jvnInvalidateReader(int joi)
-            throws java.rmi.RemoteException, jvn.JvnException;
+            throws java.rmi.RemoteException, jvn.JvnException, NotBoundException;
 
     /**
      * Invalidate the Write lock of a JVN object
@@ -39,7 +40,7 @@ public interface JvnRemoteServer extends Remote {
      * @throws java.rmi.RemoteException,JvnException
      **/
     public Serializable jvnInvalidateWriter(int joi)
-            throws java.rmi.RemoteException, jvn.JvnException;
+            throws java.rmi.RemoteException, jvn.JvnException, NotBoundException;
 
     /**
      * Reduce the Write lock of a JVN object
@@ -49,7 +50,7 @@ public interface JvnRemoteServer extends Remote {
      * @throws java.rmi.RemoteException,JvnException
      **/
     public Serializable jvnInvalidateWriterForReader(int joi)
-            throws java.rmi.RemoteException, jvn.JvnException;
+            throws java.rmi.RemoteException, jvn.JvnException, NotBoundException;
 
     public Integer getUid()
             throws java.rmi.RemoteException, JvnException;
