@@ -20,12 +20,23 @@ public class JvnObjectImpl implements JvnObject {
     Serializable object;
     LockState lockState;
 
+    /**
+     * Constructor
+     * @param object
+     * @param uid
+     * @throws JvnException
+     */
     public JvnObjectImpl(Serializable object, int uid) throws JvnException {
         this.object = object;
         this.uid = uid;
         this.lockState = LockState.W;//this.jvnLockWrite(); // after creation, I have a write lock on the object
     }
 
+    /**
+     * Apply a lock read.
+     * @throws JvnException
+     * @throws RemoteException
+     */
     @Override
     public synchronized void jvnLockRead() throws JvnException, RemoteException {
         logger.info("jvnLockRead state -> " + this.lockState);
@@ -56,6 +67,11 @@ public class JvnObjectImpl implements JvnObject {
         this.object = object;
     }
 
+    /**
+     * Apply a lock write.
+     * @throws JvnException
+     * @throws RemoteException
+     */
     @Override
     public synchronized void jvnLockWrite() throws JvnException, RemoteException {
         logger.info("jvnLockWrite state -> " + this.lockState);
@@ -121,6 +137,10 @@ public class JvnObjectImpl implements JvnObject {
         this.lockState = lockState;
     }
 
+    /**
+     * Invalidate a lock read.
+     * @throws JvnException
+     */
     @Override
     public synchronized void jvnInvalidateReader() throws JvnException {
         logger.info("jvnInvalidateReader " + this.lockState);
@@ -141,6 +161,11 @@ public class JvnObjectImpl implements JvnObject {
         }
     }
 
+    /**
+     * Invalidate a lock write and return the written object.
+     * @return
+     * @throws JvnException
+     */
     @Override
     public synchronized Serializable jvnInvalidateWriter() throws JvnException {
         logger.info("jvnInvalidateWriter " + this.lockState);
@@ -162,6 +187,11 @@ public class JvnObjectImpl implements JvnObject {
         return this.object;
     }
 
+    /**
+     * Invalidate a write lock for a read lock and return the written object.
+     * @return
+     * @throws JvnException
+     */
     @Override
     public synchronized Serializable jvnInvalidateWriterForReader() throws JvnException {
         logger.info("jvnInvalidateWriterForReader state -> " + this.lockState);

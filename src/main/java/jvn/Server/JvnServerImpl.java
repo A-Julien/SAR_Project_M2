@@ -33,9 +33,6 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
 
     private static final Integer cacheSize = 2;
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
     // A JVN server is managed as a singleton
     private static JvnServerImpl js = null;
@@ -129,6 +126,12 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         this.jvnCoord.jvnRegisterObject(jvnObjectName, jvnObject,  this);
     }
 
+    /**
+     * Delete a JvnObject of the server according to the lockstate priorities.
+     * (W > R > NL)
+     * @throws JvnException
+     * @throws RemoteException
+     */
     private void reduceCache() throws JvnException, RemoteException {
         Integer ifR = null;
         Integer ifW = null;

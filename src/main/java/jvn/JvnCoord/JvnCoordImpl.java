@@ -51,21 +51,23 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     private final String saveDataExtention = ".coordData";
 
 
-
+    /**
+     * JvnServerID to JvnServer
+     */
     Map<Integer, JvnRemoteServer> uidToJvnRemoteServer;
 
     /**
-     * Server to {List of JvnObjectName}
+     * JvnServerID to {List of JvnObjectName}
      */
     Map<Integer, List<String>> serverUidToJvnObjectName;
 
     /**
-     * JvnObjectName to {JvnRemoteServer to jvnLockSate}
+     * JvnObjectID to {JvnServerID to JvnLockState}
      */
     Map<Integer, Map<Integer, LockState>> jvnObjectUidToLock;
 
     /**
-     * JvnObjectName to JvnObjectUid
+     * JvnObjectName to JvnObjectID
      */
     Map<String, Integer> jvnObjectNameToUid;
 
@@ -93,6 +95,9 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         logger.info(this.printMap());
     }
 
+    /**
+     * Load all datas from save files if they exists, allocate new hasmap for otherwise
+     */
     private void restoredata(){
         try {
             this.uidToJvnRemoteServer = (Map<Integer, JvnRemoteServer>) this.xstream.fromXML(this.readFile(this.uidToJvnRemoteServer_fileName));
@@ -146,6 +151,12 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         return ++interceptorUid;
     }
 
+    /**
+     * Allocate a new JvnServer ID.
+     * @return a new id
+     * @throws RemoteException
+     * @throws JvnException
+     */
     @Override
     public synchronized int jvnGetServerUid() throws RemoteException, JvnException {
         return this.serverUid++;
@@ -191,6 +202,9 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         this.saveAllData();
     }
 
+    /**
+     * Write the changes in datas to save them.
+     */
     private void saveAllData(){
         this.writeFile(xstream.toXML(this.uidToJvnRemoteServer), this.uidToJvnRemoteServer_fileName);
         this.writeFile(xstream.toXML(this.serverUidToJvnObjectName), this.serverUidToJvnObjectName_fileName);
@@ -283,6 +297,11 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         return this.jvnObjectNameToJvnObject.get(this.getJvnObjectName(jvnObjectUid)).getSharedObject();
     }
 
+    /**
+     * Return the name of a JvnObject associated to its ID.
+     * @param jvnObjectUid the JvnObject's ID
+     * @return the JvnObject' name
+     */
     @Override
     public String getJvnObjectName(Integer jvnObjectUid) {
         for (String name : jvnObjectNameToUid.keySet())
@@ -391,6 +410,14 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         return "Coordinator say hello to server, i'm in live";
     }
 
+    /**
+     * Delete a JvnObject on a JvnServer.
+     * @param serverUid JvnServer's ID
+     * @param jvnObjectUid JnvObject's ID
+     * @param lockWrite true if JvnObject's lockstate is W, false otherwise
+     * @throws RemoteException
+     * @throws JvnException
+     */
     @Override
     public synchronized void deleteReduceServerCache(Integer serverUid, Integer jvnObjectUid, boolean lockWrite) throws RemoteException, JvnException {
         if (lockWrite){
@@ -430,6 +457,10 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
         return data.toString();
     }
 
+    /**
+     * Print datas of the JvnCoordinator.
+     * @return
+     */
     private String printMap() {
         StringBuilder data = new StringBuilder();
         data.append("\n");
