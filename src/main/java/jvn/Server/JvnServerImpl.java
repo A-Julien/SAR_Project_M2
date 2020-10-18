@@ -102,7 +102,8 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
      **/
     public void jvnTerminate()
             throws jvn.JvnException {
-        // to be completed
+
+
     }
 
     /**
@@ -231,7 +232,6 @@ public class JvnServerImpl extends UnicastRemoteObject implements JvnLocalServer
         this.interceptorList.get(joi).jvnInvalidateReader();
     }
 
-    ;
 
     /**
      * Invalidate the Write lock of the JVN object identified by id

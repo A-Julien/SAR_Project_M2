@@ -38,6 +38,11 @@ public class IrcProxy implements Serializable{
         }
     }
 
+    public void stressIrc(Sentence jo){
+        this.sentence.write("test");
+        jo.read();
+    }
+
     /**
      * IRC Constructor
      @param jo the JVN object representing the Chat

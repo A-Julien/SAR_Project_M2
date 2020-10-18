@@ -48,6 +48,8 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     private XStream xstream ;
 
     private final String pathSaveData = "src/main/resources/";
+    private final String saveDataExtention = ".coordData";
+
 
 
     Map<Integer, JvnRemoteServer> uidToJvnRemoteServer;
@@ -160,10 +162,6 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
     @Override
     public synchronized void jvnRegisterObject(String jvnObjectName, JvnObject jvnObject, JvnRemoteServer jvnRemoteServer)
             throws RemoteException, JvnException {
-
-        /**if(this.jvnLookupObject(jvnObjectName, jvnRemoteServer) == null)
-            throw new JvnException("[COORD][Error] -> the name " + jvnObjectName + " is already associated to an object");**/
-
 
         if(!this.uidToJvnRemoteServer.containsKey(jvnRemoteServer.getUid())){
             this.uidToJvnRemoteServer.put(jvnRemoteServer.getUid(), jvnRemoteServer);
@@ -409,7 +407,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
     private synchronized void writeFile(String data, String dataName){
         try {
-            FileWriter myWriter = new FileWriter(pathSaveData.concat(dataName));
+            FileWriter myWriter = new FileWriter(pathSaveData.concat(dataName).concat(this.saveDataExtention));
             myWriter.write(data);
             myWriter.close();
             logger.info("Save data " + dataName);
@@ -421,7 +419,7 @@ public class JvnCoordImpl extends UnicastRemoteObject implements JvnRemoteCoord,
 
     private String readFile(String fileName) throws FileNotFoundException {
         logger.info("Try to reading " + this.pathSaveData.concat(fileName));
-        File myObj = new File(this.pathSaveData.concat(fileName));
+        File myObj = new File(this.pathSaveData.concat(fileName).concat(this.saveDataExtention));
         Scanner myReader = new Scanner(myObj);
         StringBuilder data = new StringBuilder();
         while (myReader.hasNextLine()) {
