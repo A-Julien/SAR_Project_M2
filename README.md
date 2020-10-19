@@ -11,9 +11,12 @@
 *	CI (Travis) : https://travis-ci.com/A-Julien/SAR_Project_M2
 
 ## Documentation
-
+Project are build with java 11
 La documentation des fonctions est disponnible dans la [javadoc](https://a-julien.github.io/SAR_Project_M2/apidocs/index.html)
 
+## Installation
+* Download and include the jar to your project [here](https://github.com/A-Julien/SAR_Project_M2/releases/tag/SNAPSHOT) 
+* Clone repo and run maven : ```mvn compile```
 ## Usage
 ### Declare Read/Write methods by add annotations in an Interface
 

@@ -113,6 +113,42 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/classes/lib</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib</classpathPrefix>
+                            <!-- <mainClass>test.org.Cliente</mainClass> -->
+                        </manifest>
+                        <manifestEntries>
+                            <Class-Path>target/</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+            <!--<plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
@@ -126,7 +162,6 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
-                            <!-- <appendAssemblyId>false</appendAssemblyId> -->
                             <finalName>Manager</finalName>
                         </configuration>
                         <phase>package</phase>
@@ -145,7 +180,6 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
-                            <!-- <appendAssemblyId>false</appendAssemblyId> -->
                             <finalName>IRC</finalName>
                         </configuration>
                         <phase>package</phase>
@@ -153,7 +187,7 @@
                             <goal>single</goal>
                         </goals>
                     </execution>
-                    <!--  <execution>
+                      <execution>
                          <id>build-c</id>
                          <configuration>
                              <archive>
@@ -170,9 +204,9 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
-                    </execution>-->
+                    </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
         </plugins>
     </build>
     <reporting>
